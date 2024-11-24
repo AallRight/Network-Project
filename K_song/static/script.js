@@ -46,7 +46,7 @@ function moveSong(action, songId) {
     fetch('/song_queue', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: action, song_id: songId })
+        body: JSON.stringify({ action: action, queue_id: songId })
     })
         .then(response => response.json())
         .then(data => {
@@ -60,7 +60,7 @@ function deleteSong(songId) {
     fetch('/song_queue', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ song_id: songId })
+        body: JSON.stringify({ queue_id: songId })
     })
         .then(response => response.json())
         .then(data => {
@@ -97,7 +97,7 @@ function addToQueue(song) {
     fetch('/song_queue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ queue_id: song.data_id, title: song.Title })
+        body: JSON.stringify({ title: song.Title, data_id: song.data_id })
     })
         .then(response => response.json())
         .then(data => {

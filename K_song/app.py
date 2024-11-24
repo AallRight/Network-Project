@@ -40,15 +40,14 @@ def handle_song_queue():
     elif request.method == 'POST':
         new_song = request.json
 
+        new_song['queue_id'] = len(song_queue)
         song_queue.append(new_song)
+
         return jsonify({"message": "Song added successfully", "song_queue": song_queue})
 
     elif request.method == 'PUT':
         action = request.json.get('action')
-        song_id = request.json.get('song_id')
-
-        index = next((i for i, s in enumerate(song_queue)
-                      if s['queue_id'] == song_id), None)
+        index = request.json.get('queue_id')
 
         if index is None:
             return jsonify({"message": "Song not found"}), 404
@@ -56,18 +55,43 @@ def handle_song_queue():
         if action == "MOVE_UP" and index > 0:
             song_queue[index], song_queue[index -
                                           1] = song_queue[index - 1], song_queue[index]
+            song_queue[index]['queue_id'] = index
+            song_queue[index - 1]['queue_id'] = index - 1
+
+            return jsonify({"message": "Song moved up", "song_queue": song_queue})
+
         elif action == "MOVE_DOWN" and index < len(song_queue) - 1:
             song_queue[index], song_queue[index +
                                           1] = song_queue[index + 1], song_queue[index]
-        elif action == "MOVE_FIRST":
+            song_queue[index]['queue_id'] = index
+            song_queue[index + 1]['queue_id'] = index + 1
+
+            return jsonify({"message": "Song moved down", "song_queue": song_queue})
+
+        elif action == "MOVE_FIRST" and index > 0:
             song = song_queue.pop(index)
             song_queue.insert(0, song)
+            for i, song in enumerate(song_queue):
+                song['queue_id'] = i
+
+            return jsonify({"message": "Song moved to first", "song_queue": song_queue})
         else:
-            return jsonify({"message": "Invalid action or operation not allowed"}), 400
+
+            return jsonify({"song_queue": song_queue})
 
     elif request.method == 'DELETE':
-        song_id = request.json.get('song_id')
-        song_queue[:] = [s for s in song_queue if s['queue_id'] != song_id]
+
+        index = request.json.get('queue_id')
+        print(index)
+
+        if index is None:
+            return jsonify({"message": "Song not found"}), 404
+
+        song_queue.pop(index)
+
+        for i, song in enumerate(song_queue):
+            song['queue_id'] = i
+
         return jsonify({"message": "Song removed", "song_queue": song_queue})
 
 
