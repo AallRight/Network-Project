@@ -4,3 +4,5 @@ view.txt
 代码逻辑.md
 /database-api/mlibrary/__pycache__
 /database-api/wait_list/waitlisttest.py
+/database-api/wait_list/__pycache__
+/database-api/active_song/__pycache__
