@@ -18,9 +18,11 @@ def mlibrary_initialize(directory: str = "./data/music_file"):
         os.remove(mlibscratch.DB_PATH)
     mlibscratch.initialize_database()
     # MU_PATH = "./data/music_file"
-    # 测试能否更新成功
+
+    # 测试能否更新成功, 测试代码段
     # audio_table = mlibscratch.get_audio_info(directory)
     # print(audio_table)
+
     mlibscratch.get_audio_info(directory)
 
 

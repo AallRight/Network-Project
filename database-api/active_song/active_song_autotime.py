@@ -1,4 +1,11 @@
 import time
+# import sys
+# import os 
+# parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))    
+# sys.path.append(parent_dir)
+# wait_list_dir = parent_dir + "\wait_list"
+# sys.path.append(wait_list_dir)
+# from wait_list.wait_list import Song
 
 class ActiveSong:
     """当前播放的歌曲"""

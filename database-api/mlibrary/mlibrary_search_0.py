@@ -45,6 +45,8 @@ def search_songs_by_title(keyword):
     cursor.execute(query, (f"%{keyword}%",))
     results = cursor.fetchall()
     conn.close()
+    
+    return results
     if results:
         id_list = [row[0] for row in results]
         # 测试能否返回正确的 ID 列表
@@ -52,6 +54,8 @@ def search_songs_by_title(keyword):
         return id_list
     else :
         return []
+    
+    
 
     # 打印查询结果
     if results:
@@ -74,6 +78,8 @@ def search_songs_by_artist(keyword):
     cursor.execute(query, (f"%{keyword}%",))
     results = cursor.fetchall()
     conn.close()
+
+    return results
     if results:
         id_list = [row[0] for row in results]
         # 测试能否返回正确的 ID 列表

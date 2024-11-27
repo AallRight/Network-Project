@@ -25,6 +25,7 @@ class WaitList:
 
     def add(self, Song):
         self.wait_list.append(Song)
+        return self.wait_list
     
     def add_by_sid(self, sid):
         pass
@@ -36,11 +37,13 @@ class WaitList:
             song = self.wait_list.pop(wid)
             new_pos = max(0, min(len(self.wait_list), wid + offset))
             self.wait_list.insert(new_pos, song)
+        return self.wait_list
 
     def delete(self, wid):
         wid = wid - 1
         if 0 <= wid < len(self.wait_list):
             self.wait_list.pop(wid)
+        return self.wait_list
     def move_first(self, wid):
         self.move(wid, wid)
 
