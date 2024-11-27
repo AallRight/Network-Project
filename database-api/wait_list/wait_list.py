@@ -20,8 +20,8 @@ class WaitList:
     def __init__(self):
         self.wait_list = []
 
-    def add(self, sid):
-        self.wait_list.append(sid)
+    def add(self, Song):
+        self.wait_list.append(Song)
 
     def move(self, wid, offset):
         wid = wid - 1
@@ -40,28 +40,32 @@ class WaitList:
 
     def get_list(self):
         return self.wait_list
+    def get_idlist(self):
+        num_list = [Song.id for Song in self.wait_list]
+        return num_list
     def store(self):
         pass
 
     
 if __name__ == "__main__":
-    wait_list = WaitList()
-    wait_list.add(1)
-    wait_list.add(2)
-    wait_list.add(3)
-    wait_list.add(4)
-    wait_list.add(5)
-    wait_list.add(6)
-    wait_list.add(7)
-    wait_list.add(4)
-    print(wait_list.get_list())
-    wait_list.move(2, 1)
-    print(wait_list.get_list())
-    wait_list.delete(3)
-    print(wait_list.get_list())
-    wait_list.move(3,6)
-    print(wait_list.get_list())
-    wait_list.move(3,-10)
-    print(wait_list.get_list())
-    wait_list.move_first(6)
-    print(wait_list.get_list())
+    # wait_list = WaitList()
+    # wait_list.add(1)
+    # wait_list.add(2)
+    # wait_list.add(3)
+    # wait_list.add(4)
+    # wait_list.add(5)
+    # wait_list.add(6)
+    # wait_list.add(7)
+    # wait_list.add(4)
+    # print(wait_list.get_list())
+    # wait_list.move(2, 1)
+    # print(wait_list.get_list())
+    # wait_list.delete(3)
+    # print(wait_list.get_list())
+    # wait_list.move(3,6)
+    # print(wait_list.get_list())
+    # wait_list.move(3,-10)
+    # print(wait_list.get_list())
+    # wait_list.move_first(6)
+    # print(wait_list.get_list())
+    pass
