@@ -1,10 +1,11 @@
 # K-song allright
 
-
 ## 目录树预设（可忽略）
+
 这部分只是一个参考，具体文件夹和内容可以忽略，可以当作一个全览
-<br>
+`<br>`
 具体内容请参见下面几个标题的内容
+
 ```
 k-song-server/
 ├── app/                      # 核心业务逻辑目录
@@ -52,7 +53,7 @@ k-song-server/
 └── README.md                 # 项目说明文档
 ```
 
-
 ## 代码目录逻辑
+
 `.\database-api`是代码模块，存放代码模块
 `.\data\music_file`
