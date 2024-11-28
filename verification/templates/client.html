@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Client</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='client.css') }}">
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://cdn.webrtc-experiment.com/MediaStreamRecorder.js"> </script>
+</head>
+<body>
+
+<div class="container">
+    <h1>Socket.IO Client</h1>
+    <div id="messages"></div>
+    <div id="db"></div>
+    <div class="input-container">
+        <input type="text" id="messageInput" placeholder="Enter a message to send">
+    </div>
+    <button id="sendButton">Send</button>
+    <button id="start">Mic Start</button>
+    <button id="stop">Mic Stop</button>
+    <a href="player" target="_blank"><button>Open Player</button></a>
+
+</div>
+
+<script src="{{ url_for('static', filename='model.js') }}"></script>
+<script src="{{ url_for('static', filename='media.js') }}"></script>
+<script>
+let db;
+
+function fetchModel() {
+    fetch('/model')
+        .then(response => response.text())
+        .then(data => {
+            appendMessage(`Received: ${data}`)
+            db = Model.deserialize(data);
+            document.getElementById('db').innerHTML = db.serialize();
+        })
+        .catch(err => console.log('Failded to fetch model', err)); 
+}
+
+const address = window.location.host;
+
+const sio = io(address, {
+    cors: {
+        origin: address
+    }
+});
+
+sio.on('connect', () => {
+    sio.emit("join", "clients");
+    fetchModel();
+    appendMessage('Connected to server.');
+});
+
+sio.on('change', (data) => {
+    appendMessage(`Received: ${data}`);
+    process(data);
+});
+
+sio.on('disconnect', () => {
+    stopMediaRecorder();
+    appendMessage('Disconnected from server.');
+});
+
+// 1. Send
+document.getElementById('sendButton').onclick = () => {
+    const input = document.getElementById('messageInput');
+    const change = input.value;
+    if (change) {
+        msg = JSON.stringify({change, based_on_version: db.getCurVersion()});
+        sio.emit('change', msg);
+        input.value = ''; // Clear input after sending
+        appendMessage(`Sent: ${msg}`);
+    }
+};
+
+document.getElementById('start').onclick = () => {
+    startMediaRecorder(sio);
+    appendMessage('Start recording.');
+    document.getElementById('start').disabled = true;
+    document.getElementById('stop').disabled = false;
+}
+
+document.getElementById('stop').onclick = () => {
+    stopMediaRecorder(sio);
+    appendMessage('Stop recording.');
+    document.getElementById('start').disabled = false;
+    document.getElementById('stop').disabled = true;
+}
+
+// 5. Process
+function process(data) {
+    const dbDiv = document.getElementById('db');
+    
+    const jsonData = JSON.parse(data);
+    const version = jsonData.based_on_version;
+    const change = jsonData.change;
+
+    db.manipulate(change, version);
+    dbDiv.innerHTML = db.serialize(); // Update the display
+}
+
+function appendMessage(message) {
+    const messagesDiv = document.getElementById('messages');
+    messagesDiv.innerHTML += `<div>${message}</div>`;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto scroll
+}
+</script>
+
+</body>
+</html>
