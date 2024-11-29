@@ -11,6 +11,7 @@ sys.path.append(current_dir)
 # active_song_dir = os.path.join(current_dir, "active_song")
 # sys.path.append(active_song_dir)
 import database_api.database_top_api as dbapi
+import database_api.wait_list.wait_list_0 as wl
 
 # print("sys.path:")
 # for path in sys.path:
@@ -35,6 +36,7 @@ if  __name__ == "__main__":
     print(dbapi.wait_list_add(2))
     print(dbapi.wait_list_add(1))
     print(dbapi.wait_list_add(7))
+    song = wl.Song(1, "明我", "真夜", "明我真夜","","","")
 
     print("这是move 3 2")
     print(dbapi.wait_list_move(3, 2))

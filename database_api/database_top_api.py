@@ -60,6 +60,13 @@ def wait_list_move(wid: int, offset: int):
 def wait_list_delete(wid: int) :
     return V_waitlist.delete(wid)
 
+def active_song_play(sid: int):
+    id_list = [sid]
+    song_data = mlibrary.mlibrary_api_0.mlibrary_get_data(id_list)
+    song_list = [wait_list.wait_list_0.Song(*song) for song in song_data]
+    
+    pass
+
 def active_song_adjust_vol(volume: int):
     return V_activesong.adjust_vol(volume)
 

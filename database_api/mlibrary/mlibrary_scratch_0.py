@@ -2,6 +2,7 @@ import os
 import sqlite3
 from mutagen.mp3 import MP3
 from mutagen.oggvorbis import OggVorbis
+from mutagen.flac import FLAC
 from mutagen.easyid3 import EasyID3
 from prettytable import PrettyTable
 
@@ -69,6 +70,10 @@ def get_audio_info(directory):
                         sample_rate = audio.info.sample_rate
                     elif file.endswith(".ogg"):
                         audio = OggVorbis(file_path)
+                        track_length = audio.info.length
+                        sample_rate = audio.info.sample_rate
+                    elif file.endswith(".flac"):
+                        audio = FLAC(file_path)
                         track_length = audio.info.length
                         sample_rate = audio.info.sample_rate
 
