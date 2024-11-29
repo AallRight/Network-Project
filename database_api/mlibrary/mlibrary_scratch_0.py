@@ -55,7 +55,7 @@ def get_audio_info(directory):
     sid = 1  # 唯一歌曲编号
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.endswith((".mp3", ".oga", ".ogg")):
+            if file.endswith((".mp3", ".oga", ".ogg", ".flac")):
                 file_path = os.path.join(root, file)
 
                 try:

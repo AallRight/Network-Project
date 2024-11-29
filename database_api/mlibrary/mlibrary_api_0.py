@@ -23,7 +23,8 @@ def mlibrary_initialize(directory: str = "./data/music_file"):
     # audio_table = mlibscratch.get_audio_info(directory)
     # print(audio_table)
 
-    mlibscratch.get_audio_info(directory)
+    # mlibscratch.get_audio_info(directory)
+    return mlibscratch.get_audio_info(directory)
 
 
 def mlibrary_search_title(name: str) -> List[int]:
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     # mlibrary_update()
     print(mlibrary_search_title("明我"))
     # mlibrary_search_title("明我")
-    print(mlibrary_search_artist("s"))
+    print(mlibrary_search_artist("陈"))
     # mlibrary_search_artist("s")
     # mlibrary_get_data([1, 2, 3])
-    print(mlibrary_get_data([1, 2, 3]))
+    print(mlibrary_get_data([1, 2, 40]))

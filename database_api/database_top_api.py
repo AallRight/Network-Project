@@ -24,8 +24,74 @@ for path in sys.path:
 V_waitlist = None
 V_waitlist = wait_list.wait_list_0.WaitList()
 
+class Waitlist(wait_list.wait_list_0.WaitList):
+    def __init__(self):
+        super().__init__()
+
+    def add(self, sid):
+        id_list = [sid]
+        song_data = mlibrary.mlibrary_api_0.mlibrary_get_data(id_list)
+        song_list = [wait_list.wait_list_0.Song(*song) for song in song_data]
+        # self.wait_list.append(song_list[0])
+        super().add(song_list[0])
+        return self.get_list()
+
+    def move(self, wid, offset):
+        super().move(wid, offset)
+        return self.get_list()
+
+    def delete(self, wid):
+        super().delete(wid)
+        return self.get_list()
+
+    def get_list(self):
+        return super().get_list()
+    
+    def get_idlist(self):
+        return super().get_idlist() 
+
 V_activesong = None
 V_activesong = active_song.active_song_0.ActiveSong()
+
+class ActiveSong(active_song.active_song_0.ActiveSong):
+    def __init__(self, song_data=None):
+        super().__init__(song_data)
+        self.song_data = song_data
+        self.pause = True
+        self.time = 0.0
+        self.time_stamp = None
+        self.volume = 50  # 默认音量
+        if self.song_data and hasattr(self.song_data, 'id'):
+            self.sid = self.song_data.id
+
+    def get_data(self):
+        list = [self.sid, self.song_data, self.pause, self.time, self.time_stamp, self.volume]
+        return list
+
+    def play(self, sid, time_stamp):
+        self.sid = sid
+        self.pause = False
+        self.time_stamp = time_stamp
+        id_list = [sid]
+        song_data = mlibrary.mlibrary_api_0.mlibrary_get_data(id_list)
+        song_list = [wait_list.wait_list_0.Song(*song) for song in song_data]
+        self.song_data = song_list[0]
+
+    def play_song(self, sid, time_stamp, song_data):
+        self.sid = sid
+        self.song_data = song_data
+        self.pause = False
+        self.time_stamp = time_stamp
+
+    def pause_song(self, time):
+        self.pause = True
+        self.time = time
+
+    def adjust_vol(self, volume):
+        self.volume = max(0, min(100, volume))  # 限制音量范围为 0~100
+        return self.volume
+
+
 
 
 def mlibrary_exist():
@@ -75,6 +141,7 @@ def active_song_adjust_vol(volume: int):
 
 
 
+
 if  __name__ == "__main__":
     if mlibrary_exist():
         print("数据库已存在")
@@ -82,7 +149,7 @@ if  __name__ == "__main__":
         print("数据库不存在")
         mlibrary_init()
         print("数据库初始化完成")
-    # mlibrary_init()
+    mlibrary_init()
     list = mlibrary_search_song_by_title("明我")
     print(list)
     list = mlibrary_search_song_by_artist("真夜")
@@ -100,5 +167,25 @@ if  __name__ == "__main__":
     print(wait_list_delete(2))
 
     print(active_song_adjust_vol(60))
+    song = ActiveSong()
+    song.play(14, 0)
+    print(song.get_data())
+
+    print("这是waitlist测试")
+
+    waitlist = Waitlist()
+    waitlist.add(1)
+    waitlist.add(3)
+    waitlist.add(7)
+    waitlist.add(8)
+    waitlist.add(14)
+    waitlist.add(15)
+    print(waitlist.get_list())
+    print(waitlist.get_idlist())
+
+    print(waitlist.move(3, 2))
+    print(waitlist.get_idlist())
+    print(waitlist.delete(2))
+    print(waitlist.get_idlist())
 
     print("程序结束")
