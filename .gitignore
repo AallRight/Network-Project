@@ -8,3 +8,4 @@ view.txt
 /database-api/active_song/__pycache__
 /归档/database-api
 api_test.py
+/database_api/maindata.py

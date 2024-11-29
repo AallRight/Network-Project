@@ -49,6 +49,9 @@ class Waitlist(wait_list.wait_list_0.WaitList):
     
     def get_idlist(self):
         return super().get_idlist() 
+    
+    def pop(self):
+        return self.wait_list.pop(0)
 
 V_activesong = None
 V_activesong = active_song.active_song_0.ActiveSong()
@@ -186,6 +189,8 @@ if  __name__ == "__main__":
     print(waitlist.move(3, 2))
     print(waitlist.get_idlist())
     print(waitlist.delete(2))
+    print(waitlist.get_idlist())
+    print(waitlist.pop())
     print(waitlist.get_idlist())
 
     print("程序结束")
