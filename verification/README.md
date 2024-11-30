@@ -65,4 +65,3 @@ firefox 127.0.0.1:5002 &
 前端使用 [MediaStreamRecorder.js](https://github.com/streamproc/MediaStreamRecorder) 录制 PCM 音频，通过 WebSocket 将音频段发到后端，后端调用 PyAudio 播放音频。
 
 问题：延迟大，回环测试 ~100ms，局域网测试 ~400ms，对于实时麦克风来说不可用；不稳定，后端收到音频段的时间波动大，需要进一步设计在后端设计缓冲区保证平稳播放。
-

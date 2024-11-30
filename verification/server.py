@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 redis = Redis()
-db = Model()
+model = Model()
 player = Player()
 
 
@@ -25,7 +25,7 @@ def listen_to_redis():
         if response['type'] == 'message':
             # 3. Process
             manipulation = json.loads(response['data'].decode('utf-8'))
-            applied_changes = db.manipulate(
+            applied_changes = model.manipulate(
                 change=manipulation['change'], 
                 based_on_version=manipulation['based_on_version'])
             # 4. Broadcast
@@ -43,8 +43,8 @@ def get_player_page():
 
 @app.route('/model', methods=['GET'])
 def get_model():
-    serialized_db = db.serialize()
-    return serialized_db
+    model_str = model.serialize()
+    return model_str
 
 @socketio.on('connect')
 def handle_connect():
