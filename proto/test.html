@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>proto test</title>
+    <script src="//cdn.jsdelivr.net/npm/protobufjs@7.X.X/dist/protobuf.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .output {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        pre {
+            white-space: pre-wrap; 
+            word-wrap: break-word;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>proto test</h1>
+    <div class="output" id="output"></div>
+
+    <script>
+        function appendOutput(text) {
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML += `<pre>${text}</pre>`;
+        }
+
+        protobuf.load("client_command.proto")
+            .then(function(root) {
+                const ClientCommand = root.lookupType("ClientCommand");
+
+                appendOutput("创建 ClientCommand");
+                const command = ClientCommand.fromObject({
+                    commandId: 42,
+                    userId: 24,
+                    waitlistMove: {
+                        wid: 10,
+                        offset: -3
+                    }
+                });
+                appendOutput(JSON.stringify(command));
+
+                appendOutput("序列化");
+                const buffer = ClientCommand.encode(command).finish();
+                const hexBuffer = Array.from(buffer).map(b => ('0' + b.toString(16)).slice(-2)).join(' ');
+                appendOutput(hexBuffer);
+
+                appendOutput("反序列化");
+                const decodedCommand = ClientCommand.decode(buffer);
+                appendOutput(JSON.stringify(decodedCommand));
+
+                appendOutput("启用了 oneof 的哪一个字段");
+                if (decodedCommand.body) {
+                    const activeField = decodedCommand.body;
+                    appendOutput(activeField);
+                } else {
+                    appendOutput("No oneof field is active.");
+                }
+            })
+            .catch(function(err) {
+                appendOutput("Error loading proto file: " + err);
+            });
+    </script>
+</body>
+</html>

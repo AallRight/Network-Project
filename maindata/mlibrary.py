@@ -6,6 +6,7 @@ from mutagen.flac import FLAC
 from mutagen.easyid3 import EasyID3
 from maindata.song import Song
 from typing import *
+from functools import lru_cache
 
 class MLibrary:
     def __init__(self, db_path: str, music_path: str):
@@ -82,6 +83,7 @@ class MLibrary:
                         print(f"Error processing {file_path}: {e}")
                         continue
 
+    @lru_cache(maxsize=128)
     def fetch_songs_by_keyword(self, keyword: str) -> list[Song]:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
