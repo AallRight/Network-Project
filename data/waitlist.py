@@ -2,7 +2,7 @@ import os
 import sqlite3
 from data.song import Song
 
-class WaitList:
+class Waitlist:
     def __init__(self, db_path: str, db: bool = False):
         self.wait_list: list[Song] = []
         self.db_path = db_path

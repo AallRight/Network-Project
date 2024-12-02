@@ -1,5 +1,5 @@
 from data.song import Song
-from data.waitlist import WaitList
+from data.waitlist import Waitlist
 from data.active_song import ActiveSong
 from data.mlibrary import MLibrary
 from server.audio_server import AudioServer
@@ -12,14 +12,14 @@ from proto.client_command_executor import ClientCommandExecutor
 class Model:
     def __init__(self, db_path: str, music_path: str):
         self.mlibrary = MLibrary(db_path, music_path)
-        self.waitlist = WaitList(db_path)
+        self.waitlist = Waitlist(db_path)
         self.active_song = ActiveSong()
         self.audio_server = AudioServer(self.on_finish)
         self.executor = ClientCommandExecutor(self)
     
     def execute(self, client_command: ClientCommand):
         try:
-            self.executor.execute(client_command)
+            return self.executor.execute(client_command)
         except Exception as e:
             raise Exception(f"Failed to execute: {client_command}") from e
 

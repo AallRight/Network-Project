@@ -18,9 +18,14 @@ class ClientCommandExecutor:
         self.command_handlers, self.command_handlers_params = {}, {}
         for command in commands:
             if obj is not None:
-                handler = getattr(obj, command)
+                try:
+                    handler = getattr(obj, command)
+                except AttributeError:
+                    raise NotImplementedError(f"{command} is not implemented.")
             else:
                 handler = globals().get(command)
+                if handler is not callable:
+                    raise NotImplementedError(f"{command} is not implemented.")
             self.command_handlers[command] = handler
             self.command_handlers_params[command] = [p.name for p in signature(handler).parameters.values()]
     
@@ -35,4 +40,4 @@ class ClientCommandExecutor:
         handler = self.command_handlers[command]
         params = self.command_handlers_params[command]
         kwargs = {param: getattr(args, param) for param in params}
-        handler(**kwargs)
+        return handler(**kwargs)
