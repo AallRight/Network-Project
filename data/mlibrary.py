@@ -4,7 +4,7 @@ from mutagen.mp3 import MP3
 from mutagen.oggvorbis import OggVorbis
 from mutagen.flac import FLAC
 from mutagen.easyid3 import EasyID3
-from maindata.song import Song
+from data.song import Song
 from typing import *
 from functools import lru_cache
 
@@ -12,11 +12,11 @@ class MLibrary:
     def __init__(self, db_path: str, music_path: str):
         self.db_path = db_path
         self.music_path = music_path
-        self._clear_database()
-        self._initialize_database()
-        self._append_songs_in_directory(music_path)
+        self.__clear_database()
+        self.__initialize_database()
+        self.__append_songs_in_directory(music_path)
 
-    def _initialize_database(self):
+    def __initialize_database(self):
         if not os.path.exists(self.db_path):
             print(f"Create a new database in '{self.db_path}'.")
 
@@ -39,13 +39,13 @@ class MLibrary:
             """)
             conn.commit()
 
-    def _clear_database(self):
+    def __clear_database(self):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("DROP TABLE songs")
             conn.commit()
 
-    def _append_song(self, path, title, artist, album, track_length, sample_rate):
+    def __append_song(self, path, title, artist, album, track_length, sample_rate):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
 
@@ -56,7 +56,7 @@ class MLibrary:
 
             conn.commit()
     
-    def _append_songs_in_directory(self, directory: str):
+    def __append_songs_in_directory(self, directory: str):
         sid = 1
         for root, _, files in os.walk(directory):
             for file in files:
@@ -77,7 +77,7 @@ class MLibrary:
                         artist = audio.get("artist", ["Unknown"])[0]
                         album = audio.get("album", ["Unknown"])[0]
 
-                        self._append_song(file_path, title, artist, album, track_length, sample_rate)
+                        self.__append_song(file_path, title, artist, album, track_length, sample_rate)
                         sid += 1
                     except Exception as e:
                         print(f"Error processing {file_path}: {e}")

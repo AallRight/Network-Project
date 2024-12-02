@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from maindata.song import Song
+from data.song import Song
 
 class WaitList:
     def __init__(self, db_path: str, db: bool = False):
@@ -8,12 +8,12 @@ class WaitList:
         self.db_path = db_path
         self.db = db
         if self.db:
-            self._initialize_database()
-            self._load()
+            self.__initialize_database()
+            self.__load()
     
     def __del__(self):
         if self.db:
-            self._store()
+            self.__store()
 
     def add(self, song: Song):
         self.wait_list.append(song)
@@ -36,7 +36,7 @@ class WaitList:
     def get_sid_list(self) -> list[int]:
         return [song.sid for song in self.wait_list]
     
-    def _initialize_database(self):
+    def __initialize_database(self):
         if not os.path.exists(self.db_path):
             print(f"Create a new database in '{self.db_path}'.")
 
@@ -59,7 +59,7 @@ class WaitList:
             """)
             conn.commit()
         
-    def _store(self):
+    def __store(self):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM wait_list")
@@ -73,7 +73,7 @@ class WaitList:
             conn.commit()
 
 
-    def _load(self):
+    def __load(self):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT sid, path, title, artist, album, track_length, sample_rate FROM wait_list ORDER BY id")

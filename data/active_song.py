@@ -1,7 +1,7 @@
 import time
 from typing import *
 import json
-from maindata.song import Song
+from data.song import Song
 
 class ActiveSong:
     def __init__(self):

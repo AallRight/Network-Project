@@ -3,37 +3,42 @@ syntax = "proto3";
 message ClientCommand {
     int64 command_id = 1;
     int64 user_id = 2;
-    oneof body {
-        WaitListAdd waitlist_add = 3;
-        WaitListMove waitlist_move = 4;
-        WaitListDelete waitlist_delete = 5;
+    oneof command {
+        WaitlistAdd waitlist_add = 3;
+        WaitlistMove waitlist_move = 4;
+        WaitlistDelete waitlist_delete = 5;
         Play play = 6;
         Pause pause = 7;
-        AdjustVolume adjust_volume = 8;
-        GetWaitList get_waitlist = 9;
-        GetMLibrary get_mlibrary = 10;
+        Pause jump = 8;
+        AdjustVolume adjust_volume = 9;
+        GetWaitlist get_waitlist = 10;
+        GetMLibrary get_mlibrary = 11;
+        GetActiveSong get_active_song = 12;
     }
 }
 
-message WaitListAdd {
+message WaitlistAdd {
     int64 sid = 1;
 }
 
-message WaitListMove {
+message WaitlistMove {
     int64 wid = 1;
     int64 offset = 2;
 }
 
-message WaitListDelete {
+message WaitlistDelete {
     int64 wid = 1;
 }
 
 message Play {
     int64 sid = 1;
-    int64 time_stamp = 2;
 }
 
 message Pause {
+
+}
+
+message Jump {
     int64 time = 1;
 }
 
@@ -41,10 +46,14 @@ message AdjustVolume {
     int64 volume = 1;
 }
 
-message GetWaitList {
+message GetWaitlist {
 
 }
 
 message GetMLibrary {
     int64 page = 1;
+}
+
+message GetActiveSong {
+
 }

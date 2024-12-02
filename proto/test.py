@@ -6,7 +6,8 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 sys.dont_write_bytecode = True
 
-from proto.client_command_pb2 import ClientCommand, WaitListAdd, WaitListMove, WaitListDelete, Play, Pause, AdjustVolume, GetWaitList, GetMLibrary
+from proto.client_command_pb2 import ClientCommand
+from google.protobuf.json_format import MessageToDict
 
 def main():
     print("\n创建 ClientCommand")
@@ -28,7 +29,7 @@ def main():
     print(new_command)
     
     print("\n启用了 oneof 的哪一个字段")
-    print(new_command.WhichOneof("body"))
+    print(new_command.WhichOneof("command"))
 
 if __name__ == "__main__":
     main()

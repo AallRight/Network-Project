@@ -65,8 +65,8 @@
                 appendOutput(JSON.stringify(decodedCommand));
 
                 appendOutput("启用了 oneof 的哪一个字段");
-                if (decodedCommand.body) {
-                    const activeField = decodedCommand.body;
+                if (decodedCommand.command) {
+                    const activeField = decodedCommand.command;
                     appendOutput(activeField);
                 } else {
                     appendOutput("No oneof field is active.");
