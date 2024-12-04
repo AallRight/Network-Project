@@ -1,18 +1,17 @@
-# protobuf 消息格式模块
+# proto 消息格式模块
 
-## 测试
-
-Python:
+## 编译
 
 ```bash
-protoc --python_out=. client_command.proto
-python test.py
+protoc --python_out=. message.proto
+mv message_pb2.py message.py
+cp message.proto ../static/message.proto
 ```
 
-Native JS:
+## 说明
 
-```bash
-python -m http.server 5004
-```
+command id 类似于 commit id，它与数据版本和更改双重绑定，它的值是从 1 开始的自然数，多个客户端和服务端本地都会存一个 command id，保证多个客户端和服务端的数据一致性
 
-浏览器打开 http://localhost:5004/test.html，控制台检查输出
+command id 在下行消息中的作用：让客户端得知客户端发来的数据对应的 command id。如果是主动请求的数据，那么 command id 应该等于本地的 command id，否则报错；如果是更新的数据，那么 command id 应该等于本地的 command id + 1，否则报错，然后修改本地的 command_id 为 command id + 1。如果报错，那么这个下行消息无效，重新请求。
+
+command id 在上行消息中的作用：让服务端得知客户端是否已经收到了最新的更改。收到的 command id 应该等于本地的 command id + 1，否则报错。当然这里可以作更多的处理，因为有一些更改是可交换的。

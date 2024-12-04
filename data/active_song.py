@@ -1,6 +1,7 @@
 from typing import *
 import json
 from data.song import Song
+from dataclasses import asdict
 
 class ActiveSong:
     def __init__(self):
@@ -27,7 +28,7 @@ class ActiveSong:
 
     def serialize(self) -> dict:
         return json.dumps({
-            'song': self.song.serialize() if self.song else None,
+            'song': asdict(self.song) if self.song else None,
             'is_pause': self.is_pause,
             'time': self.time,
             'time_stamp': self.time_stamp,
@@ -44,7 +45,7 @@ class ActiveSong:
             active_song.time_stamp = data.get('time_stamp', None)
             active_song.volume = data.get('volume', 50)
             if data.get('song'):
-                active_song.song = Song.deserialize(data['song'])
+                active_song.song = Song(**data['song'])
             return active_song
         except (json.JSONDecodeError, TypeError) as e:
             raise Exception(f"Failed to deserialize from JSON {json_str}") from e

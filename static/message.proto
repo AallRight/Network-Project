@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+message UplinkMessage {
+    int64 user_id = 1;
+    oneof payload {
+        ClientCommand client_command = 2;
+        ClientQuery client_query = 3;
+    }
+}
+
+message DownlinkMessage {
+    optional int64 command_id = 1;
+    oneof payload {
+        WaitlistProto waitlist = 2;
+        ActiveSongProto active_song = 3;
+        MLibraryProto mlibrary = 4;
+        Error error = 5;
+    }
+}
+
+message ClientCommand {
+    int64 command_id = 1;
+    oneof command {
+        WaitlistAdd waitlist_add = 3;
+        WaitlistMove waitlist_move = 4;
+        WaitlistDelete waitlist_delete = 5;
+        Play play = 6;
+        Pause pause = 7;
+        Jump jump = 8;
+        AdjustVolume adjust_volume = 9;
+    }
+}
+
+message ClientQuery {
+    oneof query {
+        GetWaitlist get_waitlist = 2;
+        GetMLibrary get_mlibrary = 3;
+        GetActiveSong get_active_song = 4;
+    }
+}
+
+// =============== Command ===============
+
+message WaitlistAdd {
+    int64 sid = 1;
+}
+
+message WaitlistMove {
+    int64 wid = 1;
+    int64 offset = 2;
+}
+
+message WaitlistDelete {
+    int64 wid = 1;
+}
+
+message Play {
+    int64 sid = 1;
+}
+
+message Pause {
+
+}
+
+message Jump {
+    int64 time = 1;
+}
+
+message AdjustVolume {
+    int64 volume = 1;
+}
+
+// =============== Query ===============
+
+message GetWaitlist {
+
+}
+
+message GetMLibrary {
+    int64 page = 1;
+}
+
+message GetActiveSong {
+    
+}
+
+message WaitlistProto {
+    repeated string songs = 1;
+    // JSON format {"sid", "path", "title", "artist", "album", "track_length", "sample_rate"}
+}
+
+message MLibraryProto {
+    int64 page = 1;
+    int64 count = 2;
+    repeated string songs = 3; 
+    // JSON format {"sid", "path", "title", "artist", "album", "track_length", "sample_rate"}
+}
+
+message ActiveSongProto {
+    string active_song = 1;
+    // JSON format {{"sid", "path", "title", "artist", "album", "track_length", "sample_rate"}, "is_pause", "time", "time_stamp", "volume"}
+}
+
+message Error {
+    string error = 1; // error message
+}

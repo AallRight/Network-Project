@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="//unpkg.com/layui@2.9.20/dist/css/layui.css" rel="stylesheet">
+  <script src="//unpkg.com/layui@2.9.20/dist/layui.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/protobufjs@7.X.X/dist/protobuf.min.js"></script>
+  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='connection.js') }}"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>KSONG</title>
+  <style>
+  </style>
+</head>
+
+<body>
+  <div class="layui-tab layui-tab-brief" lay-filter="main-test">
+    <ul class="layui-tab-title">
+      <li class="layui-this">歌曲库</li>
+      <li>搜索</li>
+      <li>播放列表</li>
+    </ul>
+    <div class="layui-tab-content">
+
+      <div class="layui-tab-item layui-show">
+        <div class="page-container">
+          <table class="layui-hide" id="mlibrary-table" lay-filter="mlibrary-table"></table>
+          <div id="mlibrary-page"></div>
+        </div>
+      </div>
+
+      <div class="layui-tab-item">
+        <div class="page-container">
+          <table class="layui-hide" id="search-table" lay-filter="search-table"></table>
+          <div id="search-page"></div>
+          <hr class="ws-space-16">
+          <div class="layui-form">
+            <div class="layui-input-wrap">
+              <input type="text" lay-affix="search" lay-filter="search" lay-options="{split: true}" placeholder="搜索…"
+                class="layui-input">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="layui-tab-item">
+        <div class="page-container">
+          <table class="layui-hide" id="waitlist-table" lay-filter="waitlist-table"></table>
+          <div id="waitlist-page"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <div class="nav">
+    <button type="button" class="layui-btn layui-btn-ksong"><span class="iconfont">&#xe616;</span></button>
+    <button type="button" class="layui-btn layui-btn-ksong"><span class="iconfont">&#xe614;</span></button>
+    <button type="button" class="layui-btn layui-btn-ksong"><span class="iconfont">&#xe617;</span></button>
+    <button type="button" class="layui-btn layui-btn-ksong"><span class="iconfont">&#xe613;</span></button>
+    <div id="progress"></div>
+    <span class="iconfont" style="color: #45c8bb;">&#xe61c;</span>
+    <div id="volume"></div>
+  </div>
+
+
+  <script type="text/html" id="waitlist-tool">
+    <div class="layui-clear-space">
+      <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="up">up</a>
+      <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="down">down</a>
+      <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="remove">remove</a>
+    </div>
+  </script>
+
+  <script type="text/html" id="mlibrary-tool">
+    <div class="layui-clear-space">
+      <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="play">play</a>
+      <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="next">next</a>
+    </div>
+  </script>
+
+  <script type="text/html" id="search-tool">
+    <div class="layui-clear-space">
+      <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="play">play</a>
+      <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="next">next</a>
+    </div>
+  </script>
+
+</body>
+
+</html>

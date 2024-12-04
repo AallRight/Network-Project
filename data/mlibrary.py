@@ -84,7 +84,7 @@ class MLibrary:
                         continue
 
     @lru_cache(maxsize=128)
-    def fetch_songs_by_keyword(self, keyword: str) -> list[Song]:
+    def get_songs_by_keyword(self, keyword: str) -> list[Song]:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
 
@@ -99,7 +99,7 @@ class MLibrary:
             return songs
         
     
-    def fetch_songs_by_ids(self, sids: list[int])-> list[Optional[Song]]:
+    def get_songs_by_ids(self, sids: list[int])-> list[Optional[Song]]:
         if not sids:
             return []
 
@@ -120,3 +120,11 @@ class MLibrary:
                     songs.append(None)
 
             return songs
+        
+    
+    def get_num_songs(self) -> int:
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM songs")
+            count = cursor.fetchone()[0]
+            return count
