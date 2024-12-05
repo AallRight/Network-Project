@@ -17,6 +17,9 @@
 </head>
 
 <body>
+  <div class="floating-box" id="song_title">
+    没有正在播放的歌曲
+  </div>
   <div class="layui-tab layui-tab-brief" lay-filter="main-test">
     <ul class="layui-tab-title">
       <li class="layui-this">歌曲库</li>
@@ -58,10 +61,9 @@
 
 
   <div class="nav">
-    <button type="button" class="layui-btn layui-btn-ksong"><span class="iconfont">&#xe616;</span></button>
-    <button type="button" class="layui-btn layui-btn-ksong"><span class="iconfont">&#xe614;</span></button>
-    <button type="button" class="layui-btn layui-btn-ksong"><span class="iconfont">&#xe617;</span></button>
-    <button type="button" class="layui-btn layui-btn-ksong"><span class="iconfont">&#xe613;</span></button>
+    <button type="button" class="layui-btn layui-btn-ksong" id="play-button"><span class="iconfont">&#xe614;</span></button>
+    <button type="button" class="layui-btn layui-btn-ksong" id="playnext-button"><span class="iconfont">&#xe617;</span></button>
+    <button type="button" class="layui-btn layui-btn-ksong" id="voice-button"><span class="iconfont">&#xe613;</span></button>
     <div id="progress"></div>
     <span class="iconfont" style="color: #45c8bb;">&#xe61c;</span>
     <div id="volume"></div>

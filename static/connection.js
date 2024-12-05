@@ -15,17 +15,17 @@ function onConnect() {
 function onReceiveUserId(data) {
     userId = data.user_id;
     console.log("user id", userId);
-    const event = new CustomEvent('onReceiveUserId', {});
+    const event = new CustomEvent('onSetUserId', {});
     window.dispatchEvent(event);
 }
 
 async function waitForUserId() {
     return new Promise((resolve) => {
-        const handleReceiveUserId = () => {
-            window.removeEventListener('onReceiveUserId', handleReceiveUserId);
+        const handler = () => {
+            window.removeEventListener('onSetUserId', handler);
             resolve(true);
         };
-        window.addEventListener('onReceiveUserId', handleReceiveUserId);
+        window.addEventListener('onSetUserId', handler);
     });
 }
 
@@ -54,6 +54,7 @@ async function init() {
     ClientQuery = root.lookupType("ClientQuery");
     UplinkMessage = root.lookupType("UplinkMessage");
     DownlinkMessage = root.lookupType("DownlinkMessage");
+
     sio = io(address, {
         cors: {
             origin: address
@@ -63,6 +64,7 @@ async function init() {
     sio.on('connect', onConnect);
     sio.on('disconnect', onDisconnect);
     sio.on('downlink_message', onReceiveDownlinkMessage);
+    await waitForUserId();
 }
 
 function sendUplinkMessage(uplinkMessage) {

@@ -22,7 +22,7 @@ class ActiveSong:
         self.time = time
         self.time_stamp = None
 
-    def adjust_volume(self, volume: int):
+    def set_volume(self, volume: int):
         self.volume = max(0, min(100, volume))
     
 

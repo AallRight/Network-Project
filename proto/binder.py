@@ -9,8 +9,8 @@ class HandlerBinder:
             if obj is not None:
                 try:
                     handler = getattr(obj, operation)
-                except AttributeError:
-                    raise NotImplementedError(f"{operation} is not implemented.")
+                except Exception as e:
+                    raise NotImplementedError(f"{operation} is not implemented.") from e
             else:
                 handler = globals().get(operation)
                 if handler is not callable:
@@ -20,8 +20,14 @@ class HandlerBinder:
     
     def handle(self, message):
         operation = message.WhichOneof(self.oneof_field)
-        args = getattr(message, operation)
+        try:
+            args = getattr(message, operation)
+        except Exception as e:
+            raise Exception(f"Missing operation. (message: >>> {message} <<<)") from e
         handler = self.operation_handlers[operation]
         params = self.operation_params[operation]
-        kwargs = {param: getattr(args, param) for param in params}
+        try:
+            kwargs = {param: getattr(args, param) for param in params}
+        except Exception as e:
+            raise Exception(f"Missing arg. (got {args}, excepted {params})") from e
         return handler(**kwargs)

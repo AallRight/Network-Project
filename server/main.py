@@ -13,36 +13,24 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 sys.dont_write_bytecode = True
 
-from server.controller import Controller
+from server.controller import Controller, UsersManager, ESCAPE_USER_ID
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 controller: Optional[Controller] = None
-
-user_lock = threading.Lock()
-user_id_counter = 0
-user_id_to_sid = {}
-sid_to_user_id = {}
-
+users_manager = UsersManager()
 uplink_message_queue = queue.Queue()
 
 @socketio.on('connect')
 def handle_connect():
-    global user_id_counter
-    with user_lock:
-        user_id_counter += 1
-        user_id = user_id_counter
-        user_id_to_sid[user_id] = request.sid
-        sid_to_user_id[request.sid] = user_id
+    user_id = users_manager.allocate(request.sid)
     socketio.emit('user_id', {'user_id': user_id}, to=request.sid)
     app.logger.info(f'Client connected. {request.sid} {user_id}')
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    user_id = sid_to_user_id[request.sid]
-    del sid_to_user_id[request.sid]
-    del user_id_to_sid[user_id]
+    user_id = users_manager.deallocate(request.sid)
     app.logger.info(f'Client disconnected. {request.sid} {user_id}')
 
 @socketio.on('join')
@@ -64,11 +52,14 @@ def process_uplink_message():
         uplink_message = uplink_message_queue.get()
         downlink_message, to_user_id = controller.handle(uplink_message)
         if to_user_id is None:
-            socketio.emit('downlink_message', downlink_message)
-        elif to_user_id in user_id_to_sid:
-            socketio.emit('downlink_message', downlink_message, to=user_id_to_sid[to_user_id])
+            socketio.emit('downlink_message', downlink_message)  # broadcast
         else:
-            app.logger.error(f"user_id {to_user_id} not found!")
+            sid = users_manager.get_sid(to_user_id)
+            if sid is not None:
+                socketio.emit('downlink_message', downlink_message, to=sid)
+            elif to_user_id != ESCAPE_USER_ID:
+                app.logger.error(f"user_id {to_user_id} not found!")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

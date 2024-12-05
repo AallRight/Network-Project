@@ -41,12 +41,12 @@ class CommandService:
 
         self.audio_server = AudioServer()
         self.handler = HandlerBinder(message_type=ClientCommand, oneof_field="command", obj=self)
-    
+
     def execute(self, client_command: ClientCommand):
         try:
             return self.handler.handle(client_command)
         except Exception as e:
-            raise Exception(f"Failed to execute: {client_command}") from e
+            raise Exception(f"Failed to execute client command. (command: >>> {client_command} <<<)") from e
 
     def waitlist_add(self, sid: int):
         song = self.mlibrary.get_songs_by_ids([sid])[0]
@@ -63,14 +63,21 @@ class CommandService:
         self.waitlist.delete(wid)
         return make_downlink_message_waitlist(self.waitlist)
     
-    def play(self, sid: int):
+    def play(self, sid: int, time: int):
         song = self.mlibrary.get_songs_by_ids([sid])[0]
         if song == None:
             raise Exception(f"Song (sid {sid}) not found.")
-        time_stamp = self.audio_server.play(song.path)
+        time_stamp = self.audio_server.play(song.path, time)
         self.active_song.play(song, time_stamp)
         return make_downlink_message_active_song(self.active_song)
-
+    
+    def play_next(self):
+        song = self.waitlist.get_song(1)
+        if song is not None:
+            time_stamp = self.audio_server.play(song.path, 0)
+            self.active_song.play(song, time_stamp)
+        return make_downlink_message_active_song(self.active_song)
+        
     def pause(self):
         time = self.audio_server.pause()
         self.active_song.pause(time)
@@ -85,8 +92,8 @@ class CommandService:
         return make_downlink_message_active_song(self.active_song)
 
     def adjust_volume(self, volume: int):
-        self.audio_server.adjust_volume(volume)
-        self.active_song.adjust_volume(volume)
+        self.audio_server.set_volume(volume)
+        self.active_song.set_volume(volume)
         return make_downlink_message_active_song(self.active_song)
 
 
@@ -111,4 +118,4 @@ class QueryService:
         try:
             return self.handler.handle(client_query)
         except Exception as e:
-            raise Exception(f"Failed to execute: {client_query}") from e
+            raise Exception(f"Failed to execute client query. (query: >>> {client_query} <<<)") from e

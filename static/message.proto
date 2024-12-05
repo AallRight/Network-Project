@@ -9,7 +9,7 @@ message UplinkMessage {
 }
 
 message DownlinkMessage {
-    optional int64 command_id = 1;
+    int64 command_id = 1;
     oneof payload {
         WaitlistProto waitlist = 2;
         ActiveSongProto active_song = 3;
@@ -28,6 +28,7 @@ message ClientCommand {
         Pause pause = 7;
         Jump jump = 8;
         AdjustVolume adjust_volume = 9;
+        PlayNext play_next = 10;
     }
 }
 
@@ -56,6 +57,7 @@ message WaitlistDelete {
 
 message Play {
     int64 sid = 1;
+    int64 time = 2;
 }
 
 message Pause {
@@ -68,6 +70,10 @@ message Jump {
 
 message AdjustVolume {
     int64 volume = 1;
+}
+
+message PlayNext {
+
 }
 
 // =============== Query ===============

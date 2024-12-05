@@ -45,6 +45,18 @@
     margin: 20px;
 }
 
+.floating-box {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    z-index: 1000;
+}
 
 .marquee {
     width: 160px;

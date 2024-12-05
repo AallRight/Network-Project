@@ -43,6 +43,8 @@ let totaltime = 0; // ms
 
 let volume = 50;
 
+let song;
+
 
 const waitlistCols = [[
     { field: 'wid', title: '', width: 20, sort: true },
@@ -152,34 +154,53 @@ function renderSearch() {
 }
 
 function renderProgressBar() {
-    let sliderInstance = slider.render({
+    let inst = slider.render({
         elem: '#progress',
         min: 0,
         max: totaltime,
         setTips: convertMilliseconds,
     })
-    delete sliderInstance.config.done;
+    delete inst.config.done; // setValue will trigger the done callback function
     if (isPause) {
         stopTimer();
-        sliderInstance.setValue(time);
+        inst.setValue(time);
     } else {
-        sliderInstance.setValue(Math.min(Date.now() - time), 0);
+        inst.setValue(Math.min(Date.now() - time), 0);
         startTimer(1000, () => {
-            delete sliderInstance.config.done;
-            sliderInstance.setValue(Math.min(Date.now() - time));
-            sliderInstance.config.done = onProgressBarJump;
+            // Render every 1 second
+            delete inst.config.done;
+            inst.setValue(Math.min(Date.now() - time));
+            inst.config.done = onProgressBarJump;
         });
     }
-    sliderInstance.config.done = onProgressBarJump;
+    inst.config.done = onProgressBarJump;
 }
 
 function renderVolume() {
-    let sliderInstance = slider.render({
+    let inst = slider.render({
         elem: '#volume',
         min: 0,
         max: 100,
     })
-    sliderInstance.setValue(volume);
+    delete inst.config.done; // setValue will trigger the done callback function
+    inst.setValue(volume);
+    inst.config.done = onVolumeSet;
+}
+
+function renderControlPanel() {
+    if (isPause) {
+        document.querySelector("#play-button span").innerText = String.fromCharCode(0xe614);
+    } else {
+        document.querySelector("#play-button span").innerText = String.fromCharCode(0xe60f);
+    }
+}
+
+function renderSongTitle() {
+    if (song) {
+        document.getElementById("song_title").innerText = song.title;
+    } else {
+        document.getElementById("song_title").innerText = "没有正在播放的歌曲";
+    }
 }
 
 // ================== 3. Event Handlers ==================
@@ -188,7 +209,7 @@ function renderVolume() {
 
 function onMLibraryJump(obj, first) {
     if (!first) {
-        sendQuery("getMLibrary", { page: obj.curr });
+        sendQuery("getMlibrary", { page: obj.curr });
         obj.curr = mlibraryPage; // recover
     }
 }
@@ -202,23 +223,41 @@ function onSearchJump(obj, first) {
 
 function onProgressBarJump(value) {
     sendCommand("jump", { time: Math.floor(value) });
-    // recover
+    // no recover
 }
+
+function onVolumeSet(value) {
+    sendCommand("adjustVolume", { volume: value });
+    // no recover
+}
+
+function onPlayButtonClick() {
+    if (isPause && song) {
+        sendCommand("play", { sid: song.sid, time: time });
+    } else {
+        sendCommand("pause", {});
+    }
+}
+
+function onPlayNextButtonClick() {
+    sendCommand("playNext", {});
+}
+
 
 function onTableTool(obj) {
     console.log(obj);
     if (obj.event === "play") {
-        sendCommand("play", { sid: obj.data.sid })
+        sendCommand("play", { sid: obj.data.sid });
     } else if (obj.event === "next") {
-        sendCommand("waitlistAdd", { sid: obj.data.sid })
+        sendCommand("waitlistAdd", { sid: obj.data.sid });
     } else if (obj.event === "up") {
-        sendCommand("waitlistMove", { wid: obj.data.wid, offset: -1 })
+        sendCommand("waitlistMove", { wid: obj.data.wid, offset: -1 });
     } else if (obj.event === "down") {
-        sendCommand("waitlistMove", { wid: obj.data.wid, offset: 1 })
+        sendCommand("waitlistMove", { wid: obj.data.wid, offset: 1 });
     } else if (obj.event === "remove") {
-        sendCommand("waitlistDelete", { wid: obj.data.wid })
+        sendCommand("waitlistDelete", { wid: obj.data.wid });
     } else {
-        throw Error("Uncaught layevent.")
+        throw Error("Uncaught layevent.");
     }
 }
 
@@ -245,17 +284,22 @@ window.addEventListener('onReceiveDownlinkMessage', function (e) {
             mlibraryPageData = [];
         renderMLibrary();
     } else if (downlinkMessage.activeSong) {
-        activeSong = JSON.parse(downlinkMessage.activeSong.activeSong);
+        let activeSong = JSON.parse(downlinkMessage.activeSong.activeSong);
         volume = activeSong.volume;
         isPause = activeSong.is_pause;
-        totaltime = Math.floor(activeSong.song.track_length * 1000);
         if (isPause) {
             time = activeSong.time;
         } else {
             time = activeSong.time_stamp;
         }
-        renderProgressBar();
+        if (activeSong.song) {
+            song = activeSong.song;
+            totaltime = Math.floor(song.track_length * 1000);
+            renderProgressBar();
+        }
         renderVolume();
+        renderControlPanel();
+        renderSongTitle();
     }
 });
 
@@ -266,7 +310,7 @@ function refresh() {
     sendQuery("getActiveSong", {})
     sendQuery("getMlibrary", { page: 1 });
 
-    renderMLibrary();
+    // renderMLibrary();
 
     element.on('tab(main-test)', function (data) {
         if (data.index === 0) {
@@ -281,24 +325,26 @@ function refresh() {
 
     // renderProgressBar();
 
-    renderVolume();
+    // renderVolume();
 
     table.on('tool(mlibrary-table)', onTableTool);
     table.on('tool(waitlist-table)', onTableTool);
+    document.getElementById("playnext-button").addEventListener("click", onPlayNextButtonClick);
+    document.getElementById("play-button").addEventListener("click", onPlayButtonClick);
 }
 
 async function main() {
     await init();
-    await waitForUserId();
     layui.use(function () {
         element = layui.element;
         table = layui.table;
         laypage = layui.laypage;
         slider = layui.slider;
-
         refresh();
     });
 }
 
-main();
+document.addEventListener('DOMContentLoaded', function() {
+    main();
+});
 
