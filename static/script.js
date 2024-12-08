@@ -72,16 +72,18 @@ const searchCols = [[
 ]];
 
 
+// Convert milliseconds to hh:mm:ss format for displaying progress bar hints.
 function convertMilliseconds(ms) {
     const totalSeconds = Math.floor(ms / 1000);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
     if (hours === NaN || minutes === NaN || seconds === NaN)
-        return "00:00:00"
+        return "00:00:00";
     return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
+// Start a timer that will periodically execute a callback function.
 function startTimer(interval, func) {
     if (timer) {
         clearInterval(timer);
@@ -188,19 +190,11 @@ function renderVolume() {
 }
 
 function renderControlPanel() {
-    if (isPause) {
-        document.querySelector("#play-button span").innerText = String.fromCharCode(0xe614);
-    } else {
-        document.querySelector("#play-button span").innerText = String.fromCharCode(0xe60f);
-    }
+    document.querySelector("#play-button span").innerText = isPause ? String.fromCharCode(0xe614) : String.fromCharCode(0xe60f);
 }
 
 function renderSongTitle() {
-    if (song) {
-        document.getElementById("song_title").innerText = song.title;
-    } else {
-        document.getElementById("song_title").innerText = "没有正在播放的歌曲";
-    }
+    document.getElementById("song_title").innerText = song ? song.title : "没有正在播放的歌曲";
 }
 
 // ================== 3. Event Handlers ==================

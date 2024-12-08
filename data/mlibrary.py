@@ -42,7 +42,7 @@ class MLibrary:
     def __clear_database(self):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute("DROP TABLE songs")
+            cursor.execute("DROP TABLE IF EXISTS songs")
             conn.commit()
 
     def __append_song(self, path, title, artist, album, track_length, sample_rate):
@@ -84,7 +84,7 @@ class MLibrary:
                         continue
 
     @lru_cache(maxsize=128)
-    def get_songs_by_keyword(self, keyword: str) -> list[Song]:
+    def get_songs_by_keyword(self, keyword: str) -> List[Song]:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
 
@@ -99,7 +99,7 @@ class MLibrary:
             return songs
         
     
-    def get_songs_by_ids(self, sids: list[int])-> list[Optional[Song]]:
+    def get_songs_by_ids(self, sids: List[int])-> List[Optional[Song]]:
         if not sids:
             return []
 
