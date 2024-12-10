@@ -1,10 +1,9 @@
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, join_room
-import threading
+
 from typing import *
 import argparse
-import queue
-import threading
+
 import os
 import sys
 
@@ -13,14 +12,14 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 sys.dont_write_bytecode = True
 
-from server.controller import Controller, UsersManager, ESCAPE_USER_ID
+from server.controller import Controller, UsersManager
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
-controller: Optional[Controller] = None
 users_manager = UsersManager()
-uplink_message_queue = queue.Queue()
+controller: Optional[Controller] = None
+
 
 @socketio.on('connect')
 def handle_connect():
@@ -41,24 +40,11 @@ def handle_join(room):
 @socketio.on('uplink_message')
 def handle_uplink_message(message):
     app.logger.info(f'Received uplink_message: {message}')
-    uplink_message_queue.put(message)
+    controller.put_uplink_message(Controller.parse_uplink_message(message))
 
 @app.route('/')
 def index():
     return render_template('test.html')
-
-def process_uplink_message():
-    while True:
-        uplink_message = uplink_message_queue.get()
-        downlink_message, to_user_id = controller.handle(uplink_message)
-        if to_user_id is None:
-            socketio.emit('downlink_message', downlink_message)  # broadcast
-        else:
-            sid = users_manager.get_sid(to_user_id)
-            if sid is not None:
-                socketio.emit('downlink_message', downlink_message, to=sid)
-            elif to_user_id != ESCAPE_USER_ID:
-                app.logger.error(f"user_id {to_user_id} not found!")
 
 
 if __name__ == '__main__':
@@ -68,7 +54,7 @@ if __name__ == '__main__':
     parser.add_argument("music", type=str, help="Music path")
     args = parser.parse_args()
 
-    controller = Controller(args.db, args.music)
-    threading.Thread(target=process_uplink_message, daemon=True).start()
+    controller = Controller(socketio, users_manager, args.db, args.music)
+    controller.start()
 
     socketio.run(app, host='0.0.0.0', port=args.port)

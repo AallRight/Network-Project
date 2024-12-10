@@ -1,4 +1,4 @@
-const address = "127.0.0.1:5001";
+const address = window.location.host;
 let userId = -1;
 let commandId = 0;
 let ClientCommand;
@@ -48,7 +48,7 @@ function onReceiveDownlinkMessage(data) {
     window.dispatchEvent(event);
 }
 
-async function init() {
+async function initConnection() {
     root = await protobuf.load("static/message.proto");
     ClientCommand = root.lookupType("ClientCommand");
     ClientQuery = root.lookupType("ClientQuery");
@@ -75,7 +75,7 @@ function sendUplinkMessage(uplinkMessage) {
     uplinkMessage = UplinkMessage.fromObject(uplinkMessage);
     console.log("send", UplinkMessage.toObject(uplinkMessage));
     let data = UplinkMessage.encode(uplinkMessage).finish();
-    data = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+    data = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength); // socket.io only supports Uint8Array
     sio.emit('uplink_message', data);
 }
 

@@ -100,6 +100,29 @@ function stopTimer() {
 
 // ================== 2. Renderers ==================
 
+/*
+ * +---------------------------------------+
+ * |                         SongTitle     |
+ * | +----------+ +---------+ +----------+ |
+ * | |          | |         | |          | |
+ * | |          | |         | |          | |
+ * | |          | |         | |          | |
+ * | |          | |         | |          | |
+ * | | MLibrary | | Search  | | Waitlist | |
+ * | |          | |         | |          | |
+ * | |          | |         | |          | |
+ * | |          | |         | |          | |
+ * | |          | |         | |          | |
+ * | |          | |         | |          | |
+ * | |          | |         | |          | |
+ * | +----------+ +---------+ +----------+ |
+ * +------------+---------------+----------+
+ * |  Control   |  ProgressBar  | Volume   |
+ * |  Panel     |               |          |
+ * +------------+---------------+----------+
+ */
+
+
 function renderMLibrary() {
     table.render({
         elem: '#mlibrary-table',
@@ -255,7 +278,7 @@ function onTableTool(obj) {
     }
 }
 
-// ================== 3.2 Update Handlers ==================
+// ================== 3.2 Update Handler ==================
 
 
 window.addEventListener('onReceiveDownlinkMessage', function (e) {
@@ -304,8 +327,6 @@ function refresh() {
     sendQuery("getActiveSong", {})
     sendQuery("getMlibrary", { page: 1 });
 
-    // renderMLibrary();
-
     element.on('tab(main-test)', function (data) {
         if (data.index === 0) {
             renderMLibrary();
@@ -317,10 +338,6 @@ function refresh() {
         console.log("tabpage", data.index);
     });
 
-    // renderProgressBar();
-
-    // renderVolume();
-
     table.on('tool(mlibrary-table)', onTableTool);
     table.on('tool(waitlist-table)', onTableTool);
     document.getElementById("playnext-button").addEventListener("click", onPlayNextButtonClick);
@@ -328,7 +345,7 @@ function refresh() {
 }
 
 async function main() {
-    await init();
+    await initConnection();
     layui.use(function () {
         element = layui.element;
         table = layui.table;
