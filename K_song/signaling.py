@@ -4,7 +4,7 @@ from quart import Quart, request, jsonify
 from quart_cors import cors
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
 from aiortc.contrib.media import MediaPlayer, MediaRecorder
-from audio import AudioProcessor
+from audioCTRL import AudioCTRL
 import time
 import json
 
@@ -52,29 +52,26 @@ async def offer():
         # # 接收到音频轨道后开始录制
         if track.kind == "audio":
 
-            try:
-                # 先获取一个音频帧，用于获取音频参数
-                standard_frame = await track.recv()
-                logging.info(f"timebase: {standard_frame.time_base}, "
-                             f"format: {standard_frame.format}, "
-                             f"pts: {standard_frame.pts}, "
-                             f"sample_rate: {standard_frame.sample_rate}")
+            # 先获取一个音频帧，用于获取音频参数
+            standard_frame = await track.recv()
+            logging.info(f"timebase: {standard_frame.time_base}, "
+                         f"format: {standard_frame.format}, "
+                         f"pts: {standard_frame.pts}, "
+                         f"sample_rate: {standard_frame.sample_rate}")
 
-                # 创建音频处理器
-                processor = AudioProcessor(
-                    buffer_size=1,
-                    sample_rate=standard_frame.sample_rate,
-                    channels=2
-                )
+            # 初始化 AudioCTRL 实例
+            audio_ctrl = AudioCTRL(buffer_size=10000,
+                                   sample_rate=standard_frame.sample_rate)
 
-                # 实时接收音频并且处理
-                await processor.process_track(track)
-
-            # 关闭音频处理器
-            except Exception as e:
-                logging.info(f"Track processing ended: {e}")
-            finally:
-                processor.close()
+            # 实时接收音频并且处理
+            while True:
+                try:
+                    frame = await track.recv()
+                    await audio_ctrl.add_web_audio(frame)
+                except Exception as e:
+                    logging.info(f"Track processing ended: {e}")
+                    audio_ctrl.player.close()
+                    break
 
     await pc.setRemoteDescription(RTCSessionDescription(sdp=offer_sdp, type="offer"))
     answer = await pc.createAnswer()
