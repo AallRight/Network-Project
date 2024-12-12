@@ -8,7 +8,10 @@ from audioplayer import AudioPlayer
 
 
 class AudioCTRL:
-    def __init__(self, sample_rate=48000, channels=2, buffer_size=10):
+    def __init__(self,
+                 sample_rate=48000,
+                 channels=2,
+                 buffer_size=10):
         """
         音频控制模块初始化
         """
@@ -28,42 +31,53 @@ class AudioCTRL:
 
         # 本地音乐数据
         self.local_audio_data = None
+        self.local_audio_length = 0
 
-        # 运行标志
-        self.running = True
+        # 加载本地音频文件
+        self.load_local_audio("music/时暮的思眷.wav")
 
         # 启动播放任务
         self.play_task = asyncio.create_task(self._play_audio())
+
+        # 运行标志
+        self.running = True
 
     def load_local_audio(self, filepath):
         """
         加载本地音频文件（例如音乐）
         """
         with wave.open(filepath, "rb") as wf:
-            if wf.getframerate() != self.sample_rate or wf.getnchannels() != self.channels:
-                raise ValueError("本地音频文件的采样率或通道数与系统设置不一致")
+            if wf.getframerate() != self.sample_rate:
+                raise ValueError("本地音频文件的采样率与系统设置不一致")
             self.local_audio_data = wf.readframes(wf.getnframes())
+
+            # 将local audio 预先处理成 np.ndarray， 以便后续使用
+            self.local_audio_data = np.frombuffer(
+                self.local_audio_data, dtype=np.int16)
+            self.local_audio_length = len(self.local_audio_data)
+
+            # 将local audio 后面补零，以便后续使用
+            self.local_audio_data = np.pad(
+                self.local_audio_data, (0, 1024), 'constant')
+
+            self.local_audio_data = self.local_audio_data.reshape(1, -1)
 
     async def add_web_audio(self, frame: AudioFrame):
         """
         添加来自 WebRTC 的音频帧
         """
         audio_data = frame.to_ndarray()  # 转换为 NumPy 数组
-        audio_data = np.tile(audio_data, (2, 1))  # 复制一份用于双声道播放
-        if not self.buffer.full():
-            await self.buffer.put(audio_data)
-        else:
-            print("警告: 缓冲区已满，丢弃音频帧")
+        if self.buffer.full():
+            await self.buffer.get()  # 如果缓冲区满，弹出最早的音频帧
+
+        # 将音频帧放入缓冲区
+        await self.buffer.put(audio_data)
 
     async def _play_audio(self):
         """
         播放协程：从缓冲区读取音频数据并输出
         """
         local_audio_index = 0
-        local_audio_chunk = (
-            np.frombuffer(self.local_audio_data,
-                          dtype=np.int16) if self.local_audio_data else None
-        )
 
         while self.running:
 
@@ -72,32 +86,37 @@ class AudioCTRL:
                 web_audio = await self.buffer.get()
 
                 # 从本地音频中提取对应大小的块
-                if local_audio_chunk is not None:
+                local_audio = None
+                if self.local_audio_data is not None:
                     chunk_size = web_audio.shape[1]
-                    local_audio = local_audio_chunk[local_audio_index:local_audio_index + chunk_size]
-                    local_audio = np.tile(local_audio, (2, 1))
-
-                    if local_audio.shape[1] < chunk_size:
-                        local_audio = np.pad(
-                            local_audio, ((0, 0), (0, chunk_size - local_audio.shape[1])), mode="constant")
+                    local_audio = self.local_audio_data[:,
+                                                        local_audio_index:local_audio_index + chunk_size]
 
                     local_audio_index = (
-                        local_audio_index + chunk_size) % len(local_audio_chunk)
+                        local_audio_index + chunk_size) % self.local_audio_length
                 else:
                     local_audio = np.zeros_like(web_audio)
 
                 # 混音
                 mixed_audio = await self.mixer.mix_frames(
                     [
-                        AudioFrame.from_ndarray(local_audio, 's16p'),
-                        AudioFrame.from_ndarray(web_audio, 's16p')
+                        local_audio,
+                        web_audio
                     ]
                 )
 
                 # 播放
                 await self.player.play_frame(mixed_audio)
-            else:
-                await asyncio.sleep(0.01)  # 如果缓冲区为空，稍作等待
+            await asyncio.sleep(0.001)  # 如果缓冲区为空，稍作等待
+
+    async def process_track(self, track):
+        """
+        处理音频轨道
+        """
+        # 实时接收音频并且处理
+        while self.running:
+            frame = await track.recv()
+            await self.add_web_audio(frame)
 
     async def stop(self):
         """
@@ -113,15 +132,13 @@ if __name__ == "__main__":
     async def main():
         audio_ctrl = AudioCTRL()
 
-        # 加载本地音频文件
-        audio_ctrl.load_local_audio("music/时暮的思眷.wav")
-
         # 模拟接收音频帧
-        for _ in range(100000):
-            silence = np.zeros((2, 480), dtype='int16')
+        for _ in range(10000):
+            silence = np.zeros((1, 1920), dtype=np.int16)
             fake_frame = AudioFrame.from_ndarray(
                 silence,
-                's16p')
+                's16',
+                layout='mono')
             await audio_ctrl.add_web_audio(fake_frame)
             await asyncio.sleep(0.01)  # 模拟 20ms 帧间隔
 

@@ -2,21 +2,22 @@ import pyaudio
 import numpy as np
 from pydub import AudioSegment
 import asyncio
-from av import AudioFrame
 
 
 class AudioPlayer:
-    def __init__(self, format=pyaudio.paInt16, sample_rate=48000, channels=2):
+    def __init__(self,
+                 format=pyaudio.paInt16,
+                 sample_rate=48000,
+                 channels=2):
         self.p = pyaudio.PyAudio()
         self.stream = self.p.open(format=format,
                                   channels=channels,
                                   rate=sample_rate,
                                   output=True)
 
-    async def play_frame(self, frame: AudioFrame):
+    async def play_frame(self, audio_data: np.ndarray):
         # 将 AudioFrame 转换为字节对象
-        audio_data = frame.to_ndarray().tobytes()
-        self.stream.write(audio_data)
+        self.stream.write(audio_data.tobytes())
 
     def close(self):
         self.stream.stop_stream()
@@ -33,13 +34,11 @@ async def main():
     chunk_size = 1024
     for i in range(0, len(audio.raw_data), chunk_size):
         chunk = audio.raw_data[i:i + chunk_size]
-        audio_data = np.frombuffer(chunk, dtype=np.int16)
-        audio_data = np.tile(audio_data, (2, 1))
+        audio_data = np.frombuffer(
+            chunk, dtype=np.int16).reshape(-1, 2)  # 转为双声道格式
+        audio_data = audio_data.mean(axis=1).astype(np.int16)
         # 将 chunk 转换为 AudioFrame
-        frame = AudioFrame.from_ndarray(
-            audio_data, format="s16p")
-        await player.play_frame(frame)
-        # await asyncio.sleep(chunk_size / audio.frame_rate)
+        await player.play_frame(audio_data)
 
     player.close()
 

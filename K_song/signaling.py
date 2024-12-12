@@ -5,6 +5,7 @@ from quart_cors import cors
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
 from aiortc.contrib.media import MediaPlayer, MediaRecorder
 from audioCTRL import AudioCTRL
+from audioprocessor import AudioProcessor
 import time
 import json
 
@@ -60,18 +61,14 @@ async def offer():
                          f"sample_rate: {standard_frame.sample_rate}")
 
             # 初始化 AudioCTRL 实例
-            audio_ctrl = AudioCTRL(buffer_size=10000,
+            audio_ctrl = AudioCTRL(buffer_size=10,
                                    sample_rate=standard_frame.sample_rate)
+            # processor = AudioProcessor(sample_rate=standard_frame.sample_rate)
+
+            # await processor.process_track(track)
 
             # 实时接收音频并且处理
-            while True:
-                try:
-                    frame = await track.recv()
-                    await audio_ctrl.add_web_audio(frame)
-                except Exception as e:
-                    logging.info(f"Track processing ended: {e}")
-                    audio_ctrl.player.close()
-                    break
+            await audio_ctrl.process_track(track)
 
     await pc.setRemoteDescription(RTCSessionDescription(sdp=offer_sdp, type="offer"))
     answer = await pc.createAnswer()
