@@ -4,7 +4,9 @@ from quart import Quart, request, jsonify
 from quart_cors import cors
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
 from aiortc.contrib.media import MediaPlayer, MediaRecorder
-import pyaudio
+from audio import AudioProcessor
+import time
+import json
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*")
@@ -34,40 +36,45 @@ async def offer():
     # 创建新的 RTCPeerConnection 实例
     pc = RTCPeerConnection()
 
+    # ? 延时测试
+    # @pc.on("datachannel")
+    # def on_datachannel(channel):
+    #     @channel.on("message")
+    #     def on_message(message):
+    #         received_timestamp = int(time.time() * 1000)  # 接收端时间戳
+    #         message_data = json.loads(message)  # 解析 JSON 字符串
+    #         sent_timestamp = message_data["timestamp"]  # 提取发送端时间戳
+    #         latency = received_timestamp - sent_timestamp
+    #         print(f"Latency: {latency:.2f} ms")
+
     @pc.on("track")
     async def on_track(track):
         # # 接收到音频轨道后开始录制
         if track.kind == "audio":
 
-            p = pyaudio.PyAudio()
-            stream = p.open(format=pyaudio.paInt16,  # 假设音频是 16 位 PCM 格式
-                            channels=1,  # 假设是单声道音频
-                            rate=48000,  # 假设采样率是 48000 Hz
-                            output=True)
+            try:
+                # 先获取一个音频帧，用于获取音频参数
+                standard_frame = await track.recv()
+                logging.info(f"timebase: {standard_frame.time_base}, "
+                             f"format: {standard_frame.format}, "
+                             f"pts: {standard_frame.pts}, "
+                             f"sample_rate: {standard_frame.sample_rate}")
 
-            # 实时接收和播放音频帧
-            while True:
-                frame = await track.recv()
-                # 将音频帧写入到音频流
-                stream.write(frame.to_ndarray().tobytes())
-        # if track.kind == "audio":
-        #     recorder = MediaRecorder("output.wav")
-        #     recorder.addTrack(track)
-        #     await recorder.start()
-        #     await asyncio.sleep(5)
-        #     await recorder.stop()
-        #     logging.info("Audio recorded")
-        # if track.kind == "audio":
-        #     logging.info("Audio track received, starting recording")
-        #     player = MediaPlayer("test.wav")
-        #     temp_track = player.audio
+                # 创建音频处理器
+                processor = AudioProcessor(
+                    buffer_size=1,
+                    sample_rate=standard_frame.sample_rate,
+                    channels=2
+                )
 
-        #     recorder = MediaRecorder("received_audio.wav")
-        #     recorder.addTrack(temp_track)
-        #     await recorder.start()
-        #     await asyncio.sleep(1)  # 模拟录制时长
-        #     await recorder.stop()
-        #     logging.info("Recording stopped and saved")
+                # 实时接收音频并且处理
+                await processor.process_track(track)
+
+            # 关闭音频处理器
+            except Exception as e:
+                logging.info(f"Track processing ended: {e}")
+            finally:
+                processor.close()
 
     await pc.setRemoteDescription(RTCSessionDescription(sdp=offer_sdp, type="offer"))
     answer = await pc.createAnswer()
