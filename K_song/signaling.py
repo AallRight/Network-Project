@@ -5,7 +5,6 @@ from quart_cors import cors
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
 from aiortc.contrib.media import MediaPlayer, MediaRecorder
 from audioCTRL import AudioCTRL
-from audioprocessor import AudioProcessor
 import time
 import json
 
@@ -61,11 +60,8 @@ async def offer():
                          f"sample_rate: {standard_frame.sample_rate}")
 
             # 初始化 AudioCTRL 实例
-            audio_ctrl = AudioCTRL(buffer_size=10,
+            audio_ctrl = AudioCTRL(buffer_size=1,
                                    sample_rate=standard_frame.sample_rate)
-            # processor = AudioProcessor(sample_rate=standard_frame.sample_rate)
-
-            # await processor.process_track(track)
 
             # 实时接收音频并且处理
             await audio_ctrl.process_track(track)

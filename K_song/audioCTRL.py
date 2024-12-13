@@ -115,8 +115,12 @@ class AudioCTRL:
         """
         # 实时接收音频并且处理
         while self.running:
-            frame = await track.recv()
-            await self.add_web_audio(frame)
+            try:
+                frame = await track.recv()
+                await self.add_web_audio(frame)
+            except Exception as e:
+                print("The client break the connection or there is an error")
+                self.running = False
 
     async def stop(self):
         """
