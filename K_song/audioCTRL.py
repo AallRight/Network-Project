@@ -92,7 +92,7 @@ class AudioCTRL:
 
         # 音频缓冲区
         self.buffer_size = buffer_size
-        self.web_buffer = asyncio.Queue(maxsize=buffer_size)
+        self.web_buffer = {}  # {connection_id: asyncio.Queue}
         self.local_buffer = asyncio.Queue(maxsize=buffer_size)
 
         # 加载本地音频文件
@@ -101,7 +101,6 @@ class AudioCTRL:
         # 运行标志
         self.running = True  # 是否播放声音标志
         self.playing = True  # 本地歌曲播放标志
-        self.connecting = True  # 是否连接标志
 
     # * 总对外播放操作
 
@@ -111,31 +110,19 @@ class AudioCTRL:
         """
         while self.running:
 
-            web_chunk = None
-            local_chunk = None
-            mixed_chunk = None
+            mixed_chunk = []
 
             # 从web缓冲区读取音频
-            if not self.web_buffer.empty():
-                # 从缓冲区读取 WebRTC 音频
-                web_chunk = await self.web_buffer.get()
+            for id in self.web_buffer:
+                if not self.web_buffer[id].empty():
+                    mixed_chunk.append(await self.web_buffer[id].get())
 
             # 从本地缓冲区读取音频
             if not self.local_buffer.empty():
-                local_chunk = await self.local_buffer.get()
+                mixed_chunk.append(await self.local_buffer.get())
 
             # 混音
-            if web_chunk is not None and local_chunk is not None:
-                mixed_chunk = await self.mixer.mix_frames(
-                    [
-                        local_chunk,
-                        web_chunk
-                    ]
-                )
-            elif web_chunk is not None:
-                mixed_chunk = web_chunk
-            elif local_chunk is not None:
-                mixed_chunk = local_chunk
+            mixed_chunk = await self.mixer.mix_frames(mixed_chunk)
 
             # 播放
             if mixed_chunk is not None:
@@ -188,31 +175,36 @@ class AudioCTRL:
     # * track1：webrtc音频
     # * track2：本地音频
 
-    async def process_track(self, track):
+    async def process_track(self, connection_id, track):
         """
         处理音频轨道
         远程端的音频控制逻辑直接集成在process中
         1. 当远程pc连接时，就意味着connecting为True
         2. 当远程pc断开时，就意味着connecting为False
         """
-        self.connecting = True
+
+        # 创建音频缓冲区
+        self.web_buffer[connection_id] = asyncio.Queue(
+            maxsize=self.buffer_size)
+
         # 实时接收音频并且处理
-        while self.connecting and self.running:
+        while self.running:
             try:
 
                 # 从音频轨道接收音频帧
                 frame = await track.recv()
                 audio_data = frame.to_ndarray()  # 转换为 NumPy 数组
-                if self.web_buffer.full():
-                    await self.web_buffer.get()
+                if self.web_buffer[connection_id].full():
+                    await self.web_buffer[connection_id].get()
 
                 # 将音频帧放入缓冲区
-                await self.web_buffer.put(audio_data)
+                await self.web_buffer[connection_id].put(audio_data)
                 await asyncio.sleep(self.time_interval)
             except Exception as e:
                 # 出现错误时关闭
                 print("The client break the connection or there is an error")
-                self.connecting = False
+                self.web_buffer.pop(connection_id)
+                break
 
     async def process_local(self):
         """
@@ -226,6 +218,7 @@ class AudioCTRL:
                 # 从本地音频中提取对应大小的块
                 local_chunk = self.local_audio.local_audio_data[chunk_idx]
                 chunk_idx += 1
+
                 if self.local_buffer.full():
                     await self.local_buffer.get()
 

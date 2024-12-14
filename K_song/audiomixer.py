@@ -19,6 +19,8 @@ class AudioMixer:
         # 检查音频帧数量
         if track_num == 1:
             return audio_data_list[0]
+        if track_num == 0:
+            return None
 
         # 将所有音频帧求和取平均，假定所有音频帧的长度是一致的
         mixed_audio = await asyncio.to_thread(
