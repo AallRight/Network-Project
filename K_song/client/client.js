@@ -1,14 +1,20 @@
 const SERVER_IP = "127.0.0.1"; // 替换为服务器地址
 let pc = null; // PeerConnection 实例
 let stream = null; // 本地音频流
+let connectionId = null; // 保存服务器返回的 connection_id
 
 // 向服务器发送消息
-async function sendToServer(data) {
-    await fetch(`http://${SERVER_IP}:9000/ice-candidate`, {
+async function sendToServer(endpoint, data) {
+    const url = `http://${SERVER_IP}:9000/${endpoint}`;
+    const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
     });
+    if (!response.ok) {
+        console.error("Error sending data to server:", response.statusText);
+    }
+    return response.json();
 }
 
 // 调整发送器的参数（可选，用于优化延时和音质）
@@ -38,25 +44,29 @@ document.getElementById("start").addEventListener("click", async () => {
         // 调整发送器参数
         adjustSenderParameters(pc);
 
+        // 创建 SDP Offer 并发送到服务器
+        const offer = await pc.createOffer();
+        let sdp = offer.sdp;
+        await pc.setLocalDescription(offer);
+
+        const response = await sendToServer("offer", { sdp: sdp });
+
+        // 保存服务器返回的 connection_id
+        connectionId = response.connection_id;
+        console.log("Connection ID:", connectionId);
+
         // 处理 ICE 候选
-        pc.onicecandidate = (event) => {
+        pc.onicecandidate = async (event) => {
             if (event.candidate) {
-                sendToServer({ candidate: event.candidate });
+                await sendToServer(`ice-candidate/${connectionId}`, { candidate: event.candidate });
             }
         };
 
-        // 创建 SDP Offer 并发送到服务器
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-
-        const response = await fetch(`http://${SERVER_IP}:9000/offer`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sdp: offer.sdp }),
+        // 设置服务器返回的 SDP Answer
+        await pc.setRemoteDescription({
+            type: response.type,
+            sdp: response.sdp,
         });
-
-        const answer = await response.json();
-        await pc.setRemoteDescription(answer);
 
         console.log("Recording started and connected to server!");
 
@@ -73,11 +83,21 @@ document.getElementById("start").addEventListener("click", async () => {
 document.getElementById("end").addEventListener("click", async () => {
     try {
         // 停止音频轨道
-        stream.getTracks().forEach(track => track.stop());
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        // 通知服务器关闭连接
+        if (connectionId) {
+            await sendToServer(`close/${connectionId}`, {});
+            console.log("Connection closed on server.");
+        }
 
         // 关闭 PeerConnection
-        pc.close();
-        pc = null;
+        if (pc) {
+            pc.close();
+            pc = null;
+        }
 
         console.log("Recording stopped and connection closed!");
 
