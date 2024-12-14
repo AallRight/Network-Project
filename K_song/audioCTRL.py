@@ -6,6 +6,10 @@ import wave
 from audiomixer import AudioMixer
 from audioplayer import AudioPlayer
 import aiofiles
+import logging
+
+# 配置日志
+logging.basicConfig(level=logging.INFO)
 
 
 class LocalAudio:
@@ -92,11 +96,11 @@ class AudioCTRL:
 
         # 音频缓冲区
         self.buffer_size = buffer_size
-        self.web_buffer = {}  # {connection_id: asyncio.Queue}
-        self.local_buffer = asyncio.Queue(maxsize=buffer_size)
+        self.buffer = {}  # {connection_id: asyncio.Queue}
 
         # 加载本地音频文件
         self.local_audio = LocalAudio()
+        self.local_buffer_id = "local"
 
         # 运行标志
         self.running = True  # 是否播放声音标志
@@ -112,14 +116,10 @@ class AudioCTRL:
 
             mixed_chunk = []
 
-            # 从web缓冲区读取音频
-            for id in self.web_buffer:
-                if not self.web_buffer[id].empty():
-                    mixed_chunk.append(await self.web_buffer[id].get())
-
-            # 从本地缓冲区读取音频
-            if not self.local_buffer.empty():
-                mixed_chunk.append(await self.local_buffer.get())
+            # 从缓冲区读取音频
+            for id in self.buffer:
+                if not self.buffer[id].empty():
+                    mixed_chunk.append(await self.buffer[id].get())
 
             # 混音
             mixed_chunk = await self.mixer.mix_frames(mixed_chunk)
@@ -136,6 +136,7 @@ class AudioCTRL:
         """
         self.play_task = asyncio.create_task(self._play_audio())
         self.running = True
+        logging.info("The audio is playing")
 
     async def stop_audio(self):
         """
@@ -146,6 +147,7 @@ class AudioCTRL:
         self.connecting = False
         await self.play_task
         self.player.close()
+        logging.info("The audio is stopped")
 
     # * 本地歌曲操作
 
@@ -160,7 +162,10 @@ class AudioCTRL:
         启动播放任务
         '''
         await self.load_local_audio("music/时暮的思眷.wav")
+        self.buffer[self.local_buffer_id] = asyncio.Queue(
+            maxsize=self.buffer_size)
         asyncio.create_task(self.process_local())
+        logging.info("The local audio is playing")
 
         # 将本地歌曲播放标志设置为 True
         self.playing = True
@@ -169,7 +174,9 @@ class AudioCTRL:
         '''
         暂停播放
         '''
+        self.buffer.pop(self.local_buffer_id)
         self.playing = False
+        logging.info("The local audio is paused")
 
     # * 音频连接和处理操作
     # * track1：webrtc音频
@@ -183,9 +190,10 @@ class AudioCTRL:
         2. 当远程pc断开时，就意味着connecting为False
         """
 
-        # 创建音频缓冲区
-        self.web_buffer[connection_id] = asyncio.Queue(
+        # 创建该轨道的音频缓冲区
+        self.buffer[connection_id] = asyncio.Queue(
             maxsize=self.buffer_size)
+        logging.info(f"Buffer of {connection_id} is created")
 
         # 实时接收音频并且处理
         while self.running:
@@ -194,16 +202,16 @@ class AudioCTRL:
                 # 从音频轨道接收音频帧
                 frame = await track.recv()
                 audio_data = frame.to_ndarray()  # 转换为 NumPy 数组
-                if self.web_buffer[connection_id].full():
-                    await self.web_buffer[connection_id].get()
+                if self.buffer[connection_id].full():
+                    await self.buffer[connection_id].get()
 
                 # 将音频帧放入缓冲区
-                await self.web_buffer[connection_id].put(audio_data)
+                await self.buffer[connection_id].put(audio_data)
                 await asyncio.sleep(self.time_interval)
             except Exception as e:
                 # 出现错误时关闭
-                print("The client break the connection or there is an error")
-                self.web_buffer.pop(connection_id)
+                self.buffer.pop(connection_id)
+                logging.info(f"The buffer of {connection_id} is removed")
                 break
 
     async def process_local(self):
@@ -219,11 +227,11 @@ class AudioCTRL:
                 local_chunk = self.local_audio.local_audio_data[chunk_idx]
                 chunk_idx += 1
 
-                if self.local_buffer.full():
-                    await self.local_buffer.get()
+                if self.buffer[self.local_buffer_id].full():
+                    await self.buffer[self.local_buffer_id].get()
 
                 # 将音频帧放入缓冲区
-                await self.local_buffer.put(local_chunk)
+                await self.buffer[self.local_buffer_id].put(local_chunk)
             await asyncio.sleep(self.time_interval)
 
 
