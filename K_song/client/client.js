@@ -118,6 +118,8 @@ document.getElementById("play").addEventListener("click", async () => {
         // 重置按钮状态
         document.getElementById("pause").disabled = false;
         document.getElementById("play").disabled = true;
+        document.getElementById("forward").disabled = false;
+        document.getElementById("backward").disabled = false;
     } catch (error) {
         console.error("Error playing song:", error);
     }
@@ -131,7 +133,29 @@ document.getElementById("pause").addEventListener("click", async () => {
         // 重置按钮状态
         document.getElementById("play").disabled = false;
         document.getElementById("pause").disabled = true;
+        document.getElementById("forward").disabled = true;
+        document.getElementById("backward").disabled = true;
     } catch (error) {
         console.error("Error pausing song:", error);
+    }
+});
+
+// 点击快进歌曲音频按钮
+document.getElementById("forward").addEventListener("click", async () => {
+    try {
+        const time = 10;
+        await sendToServer('adjust_time', { time: time });
+    } catch (error) {
+        console.error("Error forwarding song:", error);
+    }
+});
+
+// 点击快退歌曲音频按钮
+document.getElementById("backward").addEventListener("click", async () => {
+    try {
+        const time = -10;
+        await sendToServer('adjust_time', { time: time });
+    } catch (error) {
+        console.error("Error backwarding song:", error);
     }
 });

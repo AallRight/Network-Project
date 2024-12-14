@@ -5,13 +5,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebRTC Audio Recording</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        button#connect {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        button#connect:hover {
+            background-color: #45a049;
+        }
+
+        button#disconnect {
+            background-color: #f44336;
+            color: white;
+        }
+
+        button#disconnect:hover {
+            background-color: #e53935;
+        }
+
+        button#play {
+            background-color: #2196f3;
+            color: white;
+        }
+
+        button#play:hover {
+            background-color: #1976d2;
+        }
+
+        button#pause {
+            background-color: #ff9800;
+            color: white;
+        }
+
+        button#pause:hover {
+            background-color: #fb8c00;
+        }
+    </style>
 </head>
 
 <body>
-    <button id="connect">Start Recording</button>
-    <button id="disconnect" disabled>End Recording</button>
-    <button id="play">Play</button>
-    <button id="pause" disabled>Pause</button>
+    <div class="button-container">
+        <button id="connect">Start Recording</button>
+        <button id="disconnect" disabled>End Recording</button>
+        <button id="play">Play</button>
+        <button id="pause" disabled>Pause</button>
+        <button id="forward" disabled>Forward</button>
+        <button id="backward" disabled>Backward</button>
+    </div>
     <script src="client.js"></script>
 </body>
 

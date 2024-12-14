@@ -194,9 +194,11 @@ class AudioCTRL:
         调整播放时间
         '''
         # 计算调整的块数
-        # ! 该时间不是增量时间，而是绝对时间
+        # ! 该时间是增量时间，而不是绝对时间
         chunk_num = int(time * self.sample_rate / self.chunk_size)
-        self.chunk_idx = chunk_num
+        self.chunk_idx += chunk_num
+        self.chunk_idx = max(
+            0, min(self.chunk_idx, self.local_audio.chunk_num - 1))
 
     # * 音频连接和处理操作
     # * track1：webrtc音频

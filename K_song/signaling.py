@@ -90,5 +90,13 @@ async def stop_local():
     await audio_ctrl.pause_local()
     return jsonify({"message": "Local audio stopped"})
 
+
+@app.route("/adjust_time", methods=["POST"])
+async def adjust_time():
+    time = (await request.get_json()).get("time")
+    await audio_ctrl.adjust_time(time)
+    return jsonify({"message": "Time adjusted"})
+
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=9000)
