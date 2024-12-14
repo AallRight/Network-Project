@@ -29,8 +29,8 @@ function adjustSenderParameters(pc) {
     }
 }
 
-// 点击开始按钮
-document.getElementById("start").addEventListener("click", async () => {
+// 点击连接音频按钮
+document.getElementById("connect").addEventListener("click", async () => {
     try {
         // 获取本地音频流
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -71,16 +71,16 @@ document.getElementById("start").addEventListener("click", async () => {
         console.log("Recording started and connected to server!");
 
         // 启用结束按钮
-        document.getElementById("end").disabled = false;
-        document.getElementById("start").disabled = true;
+        document.getElementById("connect").disabled = true;
+        document.getElementById("disconnect").disabled = false;
 
     } catch (error) {
         console.error("Error during setup:", error);
     }
 });
 
-// 点击结束按钮
-document.getElementById("end").addEventListener("click", async () => {
+// 点击断开音频按钮
+document.getElementById("disconnect").addEventListener("click", async () => {
     try {
         // 停止音频轨道
         if (stream) {
@@ -102,10 +102,36 @@ document.getElementById("end").addEventListener("click", async () => {
         console.log("Recording stopped and connection closed!");
 
         // 重置按钮状态
-        document.getElementById("start").disabled = false;
-        document.getElementById("end").disabled = true;
+        document.getElementById("connect").disabled = false;
+        document.getElementById("disconnect").disabled = true;
 
     } catch (error) {
         console.error("Error during cleanup:", error);
+    }
+});
+
+// 点击播放歌曲音频按钮
+document.getElementById("play").addEventListener("click", async () => {
+    try {
+        await sendToServer("play_local", {});
+
+        // 重置按钮状态
+        document.getElementById("pause").disabled = false;
+        document.getElementById("play").disabled = true;
+    } catch (error) {
+        console.error("Error playing song:", error);
+    }
+});
+
+// 点击暂停歌曲音频按钮
+document.getElementById("pause").addEventListener("click", async () => {
+    try {
+        await sendToServer("pause_local", {});
+
+        // 重置按钮状态
+        document.getElementById("play").disabled = false;
+        document.getElementById("pause").disabled = true;
+    } catch (error) {
+        console.error("Error pausing song:", error);
     }
 });

@@ -24,7 +24,7 @@ audio_ctrl = AudioCTRL(buffer_size=1, sample_rate=48000)
 async def start_audio_ctrl():
     # temp function
     await audio_ctrl.play_audio()
-    await audio_ctrl.play_local()
+    await audio_ctrl.load_local("music/时暮的思眷.wav")
 
 
 @app.route("/offer", methods=["POST"])
@@ -77,6 +77,18 @@ async def close_connection(connection_id):
         return jsonify({"message": "Connection closed"})
     else:
         return jsonify({"message": "Connection not found"}), 404
+
+
+@app.route("/play_local", methods=["POST"])
+async def play_local():
+    await audio_ctrl.play_local()
+    return jsonify({"message": "Local audio playing"})
+
+
+@app.route("/pause_local", methods=["POST"])
+async def stop_local():
+    await audio_ctrl.pause_local()
+    return jsonify({"message": "Local audio stopped"})
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=9000)

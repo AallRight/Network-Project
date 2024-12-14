@@ -101,9 +101,11 @@ class AudioCTRL:
         # 加载本地音频文件
         self.local_audio = LocalAudio()
         self.local_buffer_id = "local"
+        self.chunk_idx = 0
 
         # 运行标志
         self.running = True  # 是否播放声音标志
+        self.loading = False  # 是否加载音频文件标志
         self.playing = True  # 本地歌曲播放标志
 
     # * 总对外播放操作
@@ -151,17 +153,26 @@ class AudioCTRL:
 
     # * 本地歌曲操作
 
-    async def load_local_audio(self, filepath):
+    async def load_local(self, filepath):
         """
         异步加载本地音频文件（例如音乐）
         """
         await self.local_audio.load_local_audio(filepath)
+        self.loading = True
+
+        # 将chunk_idx设置为0
+        self.chunk_idx = 0
 
     async def play_local(self):
         '''
         启动播放任务
         '''
-        await self.load_local_audio("music/时暮的思眷.wav")
+        # 判断本地音频是否加载
+        if not self.loading:
+            logging.info("The local audio is not loaded")
+            return
+
+        # 创建本地音频缓冲区
         self.buffer[self.local_buffer_id] = asyncio.Queue(
             maxsize=self.buffer_size)
         asyncio.create_task(self.process_local())
@@ -177,6 +188,15 @@ class AudioCTRL:
         self.buffer.pop(self.local_buffer_id)
         self.playing = False
         logging.info("The local audio is paused")
+
+    async def adjust_time(self, time):
+        '''
+        调整播放时间
+        '''
+        # 计算调整的块数
+        # ! 该时间不是增量时间，而是绝对时间
+        chunk_num = int(time * self.sample_rate / self.chunk_size)
+        self.chunk_idx = chunk_num
 
     # * 音频连接和处理操作
     # * track1：webrtc音频
@@ -218,14 +238,13 @@ class AudioCTRL:
         """
         处理本地音频
         """
-        chunk_idx = 0
         # 实时将本地音频添加到缓冲区
         while self.playing and self.running:
             if self.local_audio.local_audio_data is not None:
 
                 # 从本地音频中提取对应大小的块
-                local_chunk = self.local_audio.local_audio_data[chunk_idx]
-                chunk_idx += 1
+                local_chunk = self.local_audio.local_audio_data[self.chunk_idx]
+                self.chunk_idx += 1
 
                 if self.buffer[self.local_buffer_id].full():
                     await self.buffer[self.local_buffer_id].get()
