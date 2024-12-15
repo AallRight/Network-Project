@@ -107,8 +107,14 @@ class AudioCTRL:
 
         # 加载本地音频文件
         self.local_audio = LocalAudio()
-        self.chunk_base = 0
-        self.time_base = 0
+
+        # 时间基准: 用于调整播放时间
+        self.chunk_idx = 0
+
+        # 音量比例：用于调整音量
+        self.music_volume = 0.5
+        self.mic_volume = 0.5
+        self.max_volume = 2
 
         # 运行标志
         self.running = True  # 是否播放声音标志
@@ -182,23 +188,18 @@ class AudioCTRL:
             )
 
             if self.running and self.playing and self.loading:
-                chunk_idx = await self.get_chunk_idx()
-
-                # overlap control
-                if chunk_idx == last_chunk_idx:
-                    await asyncio.sleep(self.time_interval)
-                    continue
-                last_chunk_idx = chunk_idx
+                self.chunk_idx += 1
 
                 mixed_chunk.append(
-                    self.local_audio.local_audio_data[chunk_idx])
+                    (self.local_audio.local_audio_data[self.chunk_idx] * self.music_volume / self.mic_volume).astype(np.int16))  # 本地音乐音量调整
 
             # 混音
             mixed_chunk = await self.mixer.mix_frames(mixed_chunk)
 
             # 播放
             if mixed_chunk is not None:
-                await self.player.play_frame(mixed_chunk)
+                # 麦克风音量调整
+                await self.player.play_frame((mixed_chunk * self.mic_volume).astype(np.int16))
             else:
                 await asyncio.sleep(self.time_interval/10)
 
@@ -231,10 +232,7 @@ class AudioCTRL:
         self.loading = True
 
         # 将chunk_idx设置为0
-        self.chunk_base = 0
-
-        # 将time_base设置为当前时间
-        self.time_base = asyncio.get_event_loop().time()
+        self.chunk_idx = 0
 
     async def play_local(self):
         '''
@@ -244,10 +242,6 @@ class AudioCTRL:
         if not self.loading:
             logging.info("The local audio is not loaded")
             return
-
-        # 将time_base设置为当前时间
-        self.time_base = asyncio.get_event_loop().time()
-        logging.info(f"Time base is set to {self.time_base}")
 
         # 将本地歌曲播放标志设置为 True
         self.playing = True
@@ -260,10 +254,6 @@ class AudioCTRL:
         self.playing = False
         logging.info("The local audio is paused")
 
-        # 设置chunk_base
-        self.chunk_base = await self.get_chunk_idx()
-        logging.info(f"Chunk base is set to {self.chunk_base}")
-
     async def adjust_time(self, time):
         '''
         调整播放时间
@@ -273,14 +263,29 @@ class AudioCTRL:
         chunk_num = int(time * self.sample_rate *
                         self.channels / self.chunk_size)
         # 调整chunk_base
-        self.time_base = asyncio.get_event_loop().time()
-        self.chunk_base += chunk_num
-        self.chunk_base = max(
-            0, min(self.chunk_base, self.local_audio.chunk_num - 1))
-        logging.info(f"Time is adjusted to {self.time_base}")
-        logging.info(f"Chunk base is set to {self.chunk_base}")
+        self.chunk_idx += chunk_num
+        self.chunk_idx = max(
+            0, min(self.chunk_idx, self.local_audio.chunk_num - 1))
+        logging.info(f"Chunk base is set to {self.chunk_idx}")
+
+    async def adjust_volume(self, volume, mic=False):
+        '''
+        调整音量
+        '''
+        # ! 该音量是增量音量，而不是绝对音量
+        if mic:
+            self.mic_volume += volume
+            self.mic_volume = max(0, min(self.mic_volume, self.max_volume))
+            logging.info(
+                f"The microphone volume is adjusted to {self.mic_volume}")
+        else:
+            self.music_volume += volume
+            self.music_volume = max(0, min(self.music_volume, self.max_volume))
+            logging.info(
+                f"The music volume is adjusted to {self.music_volume}")
 
     # * 远程音频操作
+
     async def add_track(self, connection_id, track):
         """
         添加新的音轨，并启动其处理任务。
@@ -368,18 +373,6 @@ class AudioCTRL:
             await self.buffer[self.local_microphone_id].put(audio_data)
             await asyncio.sleep(self.time_interval)
         logging.info("The microphone processing is stopped")
-
-    # * 用于记时
-
-    async def get_chunk_idx(self):
-        """
-        根据时间获取当前的块索引
-        """
-        chunk_idx = int((asyncio.get_event_loop().time() - self.time_base) *
-                        self.sample_rate * self.channels / self.chunk_size) + self.chunk_base
-        chunk_idx = max(0, min(chunk_idx, self.local_audio.chunk_num - 1))
-
-        return chunk_idx
 
 
 # 示例用法

@@ -102,6 +102,20 @@ async def adjust_time():
     return jsonify({"message": "Time adjusted"})
 
 
+@app.route("/mic_volume", methods=["POST"])
+async def mic_volume():
+    volume = (await request.get_json()).get("volume")
+    await audio_ctrl.adjust_volume(volume, True)
+    return jsonify({"message": "Mic volume adjusted"})
+
+
+@app.route("/music_volume", methods=["POST"])
+async def music_volume():
+    volume = (await request.get_json()).get("volume")
+    await audio_ctrl.adjust_volume(volume, False)
+    return jsonify({"message": "Music volume adjusted"})
+
+
 @app.route("/open_mic", methods=["POST"])
 async def open_mic():
     await audio_ctrl.start_record()

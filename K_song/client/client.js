@@ -185,3 +185,39 @@ document.getElementById("close_mic").addEventListener("click", async () => {
         console.error("Error closing mic:", error);
     }
 });
+
+// 点击提高麦克风音量按钮
+document.getElementById("mic_volume_up").addEventListener("click", async () => {
+    try {
+        await sendToServer("mic_volume", { volume: 0.1 });
+    } catch (error) {
+        console.error("Error increasing volume:", error);
+    }
+});
+
+// 点击降低麦克风音量按钮
+document.getElementById("mic_volume_down").addEventListener("click", async () => {
+    try {
+        await sendToServer("mic_volume", { volume: -0.1 });
+    } catch (error) {
+        console.error("Error decreasing volume:", error);
+    }
+});
+
+// 点击提高音乐音量按钮
+document.getElementById("music_volume_up").addEventListener("click", async () => {
+    try {
+        await sendToServer("music_volume", { volume: 0.1 });
+    } catch (error) {
+        console.error("Error increasing volume:", error);
+    }
+});
+
+// 点击降低音乐音量按钮
+document.getElementById("music_volume_down").addEventListener("click", async () => {
+    try {
+        await sendToServer("music_volume", { volume: -0.1 });
+    } catch (error) {
+        console.error("Error decreasing volume:", error);
+    }
+});
