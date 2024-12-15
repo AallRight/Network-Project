@@ -24,7 +24,9 @@ audio_ctrl = AudioCTRL(buffer_size=1, sample_rate=48000)
 async def start_audio_ctrl():
     # temp function
     audio_ctrl.create_play_thread()
-    audio_ctrl.create_local_thread()
+    audio_ctrl.create_mic_thread()
+
+    # temp function
     await audio_ctrl.play_audio()
     await audio_ctrl.load_local("music/时暮的思眷.wav")
 
@@ -98,6 +100,18 @@ async def adjust_time():
     time = (await request.get_json()).get("time")
     await audio_ctrl.adjust_time(time)
     return jsonify({"message": "Time adjusted"})
+
+
+@app.route("/open_mic", methods=["POST"])
+async def open_mic():
+    await audio_ctrl.start_record()
+    return jsonify({"message": "Mic opened"})
+
+
+@app.route("/close_mic", methods=["POST"])
+async def close_mic():
+    await audio_ctrl.pause_record()
+    return jsonify({"message": "Mic closed"})
 
 
 if __name__ == "__main__":

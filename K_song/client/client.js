@@ -159,3 +159,29 @@ document.getElementById("backward").addEventListener("click", async () => {
         console.error("Error backwarding song:", error);
     }
 });
+
+// 点击打开麦克风按钮
+document.getElementById("open_mic").addEventListener("click", async () => {
+    try {
+        await sendToServer("open_mic", {});
+
+        // 重置按钮状态
+        document.getElementById("open_mic").disabled = true;
+        document.getElementById("close_mic").disabled = false;
+    } catch (error) {
+        console.error("Error opening mic:", error);
+    }
+});
+
+// 点击关闭麦克风按钮
+document.getElementById("close_mic").addEventListener("click", async () => {
+    try {
+        await sendToServer("close_mic", {});
+
+        // 重置按钮状态
+        document.getElementById("open_mic").disabled = false;
+        document.getElementById("close_mic").disabled = true;
+    } catch (error) {
+        console.error("Error closing mic:", error);
+    }
+});

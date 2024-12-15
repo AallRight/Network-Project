@@ -5,6 +5,7 @@ import asyncio
 import wave
 from audiomixer import AudioMixer
 from audioplayer import AudioPlayer
+from audiorecorder import AudioRecorder
 import aiofiles
 import logging
 import threading
@@ -95,29 +96,34 @@ class AudioCTRL:
         # 音频播放器
         self.player = AudioPlayer(sample_rate=sample_rate, channels=channels)
 
+        # 音频录音器
+        self.recorder = AudioRecorder(
+            sample_rate=sample_rate, chunk_size=chunk_size, channels=channels)
+
         # 音频缓冲区
         self.buffer_size = buffer_size
         self.buffer = {}  # {connection_id: asyncio.Queue}
+        self.local_microphone_id = "microphone"
 
         # 加载本地音频文件
         self.local_audio = LocalAudio()
-        self.local_buffer_id = "local"
         self.chunk_base = 0
         self.time_base = 0
 
         # 运行标志
         self.running = True  # 是否播放声音标志
         self.loading = False  # 是否加载音频文件标志
-        self.playing = True  # 本地歌曲播放标志
+        self.playing = False  # 本地歌曲播放标志
+        self.recording = False  # 麦克风录音标志
 
         # 新线程操作
         # 播放线程
         self.play_thread = None
         self.play_loop = None
 
-        # 本地音乐处理线程
-        self.local_thread = None
-        self.local_loop = None
+        # 本地麦克风处理线程
+        self.mic_thread = None
+        self.mic_loop = None
 
     # * 新建新线程操作
     def start_loop(self, loop):
@@ -138,7 +144,6 @@ class AudioCTRL:
         self.play_loop = loop
         logging.info("The play thread is created")
 
-    def create_local_thread(self):
         '''
         启动新线程
         '''
@@ -149,6 +154,17 @@ class AudioCTRL:
         self.local_loop = loop
         logging.info("The local thread is created")
 
+    def create_mic_thread(self):
+        '''
+        启动新线程
+        '''
+        loop = asyncio.new_event_loop()
+        self.mic_thread = threading.Thread(
+            target=self.start_loop, args=(loop,))
+        self.mic_thread.start()
+        self.mic_loop = loop
+        logging.info("The mic thread is created")
+
     # * 总对外播放操作
 
     async def _play_audio(self):
@@ -158,11 +174,24 @@ class AudioCTRL:
         while self.running:
 
             mixed_chunk = []
+            last_chunk_idx = 0
 
             # 从缓冲区读取音频
             for id in self.buffer:
                 if not self.buffer[id].empty():
                     mixed_chunk.append(await self.buffer[id].get())
+
+            if self.running and self.playing and self.loading:
+                chunk_idx = await self.get_chunk_idx()
+
+                # overlap control
+                if chunk_idx == last_chunk_idx:
+                    await asyncio.sleep(self.time_interval)
+                    continue
+                last_chunk_idx = chunk_idx
+
+                mixed_chunk.append(
+                    self.local_audio.local_audio_data[chunk_idx])
 
             # 混音
             mixed_chunk = await self.mixer.mix_frames(mixed_chunk)
@@ -171,7 +200,7 @@ class AudioCTRL:
             if mixed_chunk is not None:
                 await self.player.play_frame(mixed_chunk)
             else:
-                await asyncio.sleep(self.time_interval)
+                await asyncio.sleep(self.time_interval/10)
 
     async def play_audio(self):
         """
@@ -204,6 +233,9 @@ class AudioCTRL:
         # 将chunk_idx设置为0
         self.chunk_base = 0
 
+        # 将time_base设置为当前时间
+        self.time_base = asyncio.get_event_loop().time()
+
     async def play_local(self):
         '''
         启动播放任务
@@ -212,13 +244,6 @@ class AudioCTRL:
         if not self.loading:
             logging.info("The local audio is not loaded")
             return
-
-        # 创建本地音频缓冲区
-        self.buffer[self.local_buffer_id] = asyncio.Queue(
-            maxsize=self.buffer_size)
-        asyncio.run_coroutine_threadsafe(
-            self.process_local(), self.local_loop)
-        logging.info("The local audio is playing")
 
         # 将time_base设置为当前时间
         self.time_base = asyncio.get_event_loop().time()
@@ -231,7 +256,7 @@ class AudioCTRL:
         '''
         暂停播放
         '''
-        self.buffer.pop(self.local_buffer_id)
+        # 将本地歌曲播放标志设置为 False
         self.playing = False
         logging.info("The local audio is paused")
 
@@ -263,9 +288,36 @@ class AudioCTRL:
         asyncio.create_task(self.process_track(connection_id, track))
         logging.info(f"Track {connection_id} is added and processing started.")
 
+    # * 麦克风操作
+    async def start_record(self):
+        """
+        启动麦克风录音
+        """
+        # 创建麦克风缓冲区
+        self.buffer[self.local_microphone_id] = asyncio.Queue(
+            maxsize=self.buffer_size)
+        asyncio.run_coroutine_threadsafe(
+            self.process_microphone(), self.mic_loop)
+        logging.info("The microphone recording is started")
+
+        # 将麦克风录音标志设置为 True
+        self.recording = True
+
+    async def pause_record(self):
+        """
+        停止麦克风录音
+        """
+        # 将麦克风录音标志设置为 False
+        self.recording = False
+
+        # 移除麦克风缓冲区
+        self.buffer.pop(self.local_microphone_id)
+        logging.info("The microphone recording is stopped")
+
     # * 音频连接和处理操作
     # * track1：webrtc音频
-    # * track2：本地音频
+    # * track2：本地音乐音频
+    # * track3：麦克风音频
 
     async def process_track(self, connection_id, track):
         """
@@ -291,6 +343,7 @@ class AudioCTRL:
 
                 # 将音频帧放入缓冲区
                 await self.buffer[connection_id].put(audio_data)
+                await asyncio.sleep(self.time_interval)
             except Exception as e:
                 # 出现错误时关闭
                 self.buffer.pop(connection_id)
@@ -299,28 +352,25 @@ class AudioCTRL:
 
         logging.info(f"Track {connection_id} processing is stopped")
 
-    async def process_local(self):
+    async def process_microphone(self):
         """
-        处理本地音频
+        处理麦克风音频
         """
-        # 实时将本地音频添加到缓冲区
-        while self.playing and self.running:
-            if self.local_audio.local_audio_data is not None:
+        while self.recording and self.running:
+            # 从麦克风录音
+            audio_data = await self.recorder.record_frame()
 
-                # 从本地音频中提取对应大小的块
-                chunk_idx = await self.get_chunk_idx()
-                local_chunk = self.local_audio.local_audio_data[chunk_idx]
+            # 将音频帧放入缓冲区
+            if self.buffer[self.local_microphone_id].full():
+                await self.buffer[self.local_microphone_id].get()
 
-                if self.buffer[self.local_buffer_id].full():
-                    await self.buffer[self.local_buffer_id].get()
-
-                # 将音频帧放入缓冲区
-                await self.buffer[self.local_buffer_id].put(local_chunk)
+            # 将音频帧放入缓冲区
+            await self.buffer[self.local_microphone_id].put(audio_data)
             await asyncio.sleep(self.time_interval)
-
-        logging.info("The local processing is stopped")
+        logging.info("The microphone processing is stopped")
 
     # * 用于记时
+
     async def get_chunk_idx(self):
         """
         根据时间获取当前的块索引

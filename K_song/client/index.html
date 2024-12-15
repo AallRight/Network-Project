@@ -20,20 +20,25 @@
         .button-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
             background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+            max-width: 600px;
+            justify-content: center;
         }
 
         button {
-            padding: 10px 20px;
+            flex: 1 1 calc(33.333% - 20px);
+            padding: 15px 10px;
             font-size: 16px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            text-align: center;
+            color: white;
         }
 
         button:disabled {
@@ -41,40 +46,83 @@
             cursor: not-allowed;
         }
 
-        button#connect {
-            background-color: #4caf50;
-            color: white;
+        button:not(:disabled):hover {
+            transform: translateY(-3px);
         }
 
-        button#connect:hover {
+        button#connect {
+            background-color: #4caf50;
+        }
+
+        button#connect:hover:not(:disabled) {
             background-color: #45a049;
         }
 
         button#disconnect {
             background-color: #f44336;
-            color: white;
         }
 
-        button#disconnect:hover {
+        button#disconnect:hover:not(:disabled) {
             background-color: #e53935;
         }
 
         button#play {
             background-color: #2196f3;
-            color: white;
         }
 
-        button#play:hover {
+        button#play:hover:not(:disabled) {
             background-color: #1976d2;
         }
 
         button#pause {
             background-color: #ff9800;
-            color: white;
         }
 
-        button#pause:hover {
+        button#pause:hover:not(:disabled) {
             background-color: #fb8c00;
+        }
+
+        button#forward {
+            background-color: #9c27b0;
+        }
+
+        button#forward:hover:not(:disabled) {
+            background-color: #8e24aa;
+        }
+
+        button#backward {
+            background-color: #673ab7;
+        }
+
+        button#backward:hover:not(:disabled) {
+            background-color: #5e35b1;
+        }
+
+        button#open_mic {
+            background-color: #00bcd4;
+        }
+
+        button#open_mic:hover:not(:disabled) {
+            background-color: #00acc1;
+        }
+
+        button#close_mic {
+            background-color: #ff5722;
+        }
+
+        button#close_mic:hover:not(:disabled) {
+            background-color: #e64a19;
+        }
+
+        @media (max-width: 600px) {
+            .button-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            button {
+                flex: 1 1 100%;
+            }
         }
     </style>
 </head>
@@ -87,6 +135,8 @@
         <button id="pause" disabled>Pause</button>
         <button id="forward" disabled>Forward</button>
         <button id="backward" disabled>Backward</button>
+        <button id="open_mic">Open Mic</button>
+        <button id="close_mic" disabled>Close Mic</button>
     </div>
     <script src="client.js"></script>
 </body>
