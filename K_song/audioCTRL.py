@@ -7,6 +7,7 @@ from audiomixer import AudioMixer
 from audioplayer import AudioPlayer
 import aiofiles
 import logging
+import threading
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -101,12 +102,52 @@ class AudioCTRL:
         # 加载本地音频文件
         self.local_audio = LocalAudio()
         self.local_buffer_id = "local"
-        self.chunk_idx = 0
+        self.chunk_base = 0
+        self.time_base = 0
 
         # 运行标志
         self.running = True  # 是否播放声音标志
         self.loading = False  # 是否加载音频文件标志
         self.playing = True  # 本地歌曲播放标志
+
+        # 新线程操作
+        # 播放线程
+        self.play_thread = None
+        self.play_loop = None
+
+        # 本地音乐处理线程
+        self.local_thread = None
+        self.local_loop = None
+
+    # * 新建新线程操作
+    def start_loop(self, loop):
+        '''
+        启动新线程
+        '''
+        asyncio.set_event_loop(loop)
+        loop.run_forever()
+
+    def create_play_thread(self):
+        '''
+        启动新线程
+        '''
+        loop = asyncio.new_event_loop()
+        self.play_thread = threading.Thread(
+            target=self.start_loop, args=(loop,))
+        self.play_thread.start()
+        self.play_loop = loop
+        logging.info("The play thread is created")
+
+    def create_local_thread(self):
+        '''
+        启动新线程
+        '''
+        loop = asyncio.new_event_loop()
+        self.local_thread = threading.Thread(
+            target=self.start_loop, args=(loop,))
+        self.local_thread.start()
+        self.local_loop = loop
+        logging.info("The local thread is created")
 
     # * 总对外播放操作
 
@@ -130,14 +171,15 @@ class AudioCTRL:
             if mixed_chunk is not None:
                 await self.player.play_frame(mixed_chunk)
             else:
-                await asyncio.sleep(self.time_interval / 4)
+                await asyncio.sleep(self.time_interval)
 
     async def play_audio(self):
         """
         启动播放任务
         """
-        self.play_task = asyncio.create_task(self._play_audio())
+        # 开启新事件循环
         self.running = True
+        asyncio.run_coroutine_threadsafe(self._play_audio(), self.play_loop)
         logging.info("The audio is playing")
 
     async def stop_audio(self):
@@ -147,7 +189,6 @@ class AudioCTRL:
         self.running = False
         self.playing = False
         self.connecting = False
-        await self.play_task
         self.player.close()
         logging.info("The audio is stopped")
 
@@ -161,7 +202,7 @@ class AudioCTRL:
         self.loading = True
 
         # 将chunk_idx设置为0
-        self.chunk_idx = 0
+        self.chunk_base = 0
 
     async def play_local(self):
         '''
@@ -175,8 +216,13 @@ class AudioCTRL:
         # 创建本地音频缓冲区
         self.buffer[self.local_buffer_id] = asyncio.Queue(
             maxsize=self.buffer_size)
-        asyncio.create_task(self.process_local())
+        asyncio.run_coroutine_threadsafe(
+            self.process_local(), self.local_loop)
         logging.info("The local audio is playing")
+
+        # 将time_base设置为当前时间
+        self.time_base = asyncio.get_event_loop().time()
+        logging.info(f"Time base is set to {self.time_base}")
 
         # 将本地歌曲播放标志设置为 True
         self.playing = True
@@ -189,16 +235,33 @@ class AudioCTRL:
         self.playing = False
         logging.info("The local audio is paused")
 
+        # 设置chunk_base
+        self.chunk_base = await self.get_chunk_idx()
+        logging.info(f"Chunk base is set to {self.chunk_base}")
+
     async def adjust_time(self, time):
         '''
         调整播放时间
         '''
         # 计算调整的块数
         # ! 该时间是增量时间，而不是绝对时间
-        chunk_num = int(time * self.sample_rate / self.chunk_size)
-        self.chunk_idx += chunk_num
-        self.chunk_idx = max(
-            0, min(self.chunk_idx, self.local_audio.chunk_num - 1))
+        chunk_num = int(time * self.sample_rate *
+                        self.channels / self.chunk_size)
+        # 调整chunk_base
+        self.time_base = asyncio.get_event_loop().time()
+        self.chunk_base += chunk_num
+        self.chunk_base = max(
+            0, min(self.chunk_base, self.local_audio.chunk_num - 1))
+        logging.info(f"Time is adjusted to {self.time_base}")
+        logging.info(f"Chunk base is set to {self.chunk_base}")
+
+    # * 远程音频操作
+    async def add_track(self, connection_id, track):
+        """
+        添加新的音轨，并启动其处理任务。
+        """
+        asyncio.create_task(self.process_track(connection_id, track))
+        logging.info(f"Track {connection_id} is added and processing started.")
 
     # * 音频连接和处理操作
     # * track1：webrtc音频
@@ -220,7 +283,6 @@ class AudioCTRL:
         # 实时接收音频并且处理
         while self.running:
             try:
-
                 # 从音频轨道接收音频帧
                 frame = await track.recv()
                 audio_data = frame.to_ndarray()  # 转换为 NumPy 数组
@@ -229,12 +291,13 @@ class AudioCTRL:
 
                 # 将音频帧放入缓冲区
                 await self.buffer[connection_id].put(audio_data)
-                await asyncio.sleep(self.time_interval)
             except Exception as e:
                 # 出现错误时关闭
                 self.buffer.pop(connection_id)
                 logging.info(f"The buffer of {connection_id} is removed")
                 break
+
+        logging.info(f"Track {connection_id} processing is stopped")
 
     async def process_local(self):
         """
@@ -245,8 +308,8 @@ class AudioCTRL:
             if self.local_audio.local_audio_data is not None:
 
                 # 从本地音频中提取对应大小的块
-                local_chunk = self.local_audio.local_audio_data[self.chunk_idx]
-                self.chunk_idx += 1
+                chunk_idx = await self.get_chunk_idx()
+                local_chunk = self.local_audio.local_audio_data[chunk_idx]
 
                 if self.buffer[self.local_buffer_id].full():
                     await self.buffer[self.local_buffer_id].get()
@@ -254,6 +317,19 @@ class AudioCTRL:
                 # 将音频帧放入缓冲区
                 await self.buffer[self.local_buffer_id].put(local_chunk)
             await asyncio.sleep(self.time_interval)
+
+        logging.info("The local processing is stopped")
+
+    # * 用于记时
+    async def get_chunk_idx(self):
+        """
+        根据时间获取当前的块索引
+        """
+        chunk_idx = int((asyncio.get_event_loop().time() - self.time_base) *
+                        self.sample_rate * self.channels / self.chunk_size) + self.chunk_base
+        chunk_idx = max(0, min(chunk_idx, self.local_audio.chunk_num - 1))
+
+        return chunk_idx
 
 
 # 示例用法

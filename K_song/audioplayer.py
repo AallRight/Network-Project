@@ -1,6 +1,7 @@
 import pyaudio
 import numpy as np
 from pydub import AudioSegment
+import wave
 import asyncio
 
 
@@ -11,6 +12,7 @@ class AudioPlayer:
                  frames_per_buffer=256,
                  channels=2):
         self.p = pyaudio.PyAudio()
+
         self.stream = self.p.open(format=format,
                                   channels=channels,
                                   rate=sample_rate,
@@ -33,14 +35,14 @@ async def main():
     player = AudioPlayer()
 
     # 将音频数据分块播放
-    chunk_size = 1024
+    chunk_size = 480000
     for i in range(0, len(audio.raw_data), chunk_size):
         chunk = audio.raw_data[i:i + chunk_size]
         audio_data = np.frombuffer(
-            chunk, dtype=np.int16).reshape(-1, 2)  # 转为双声道格式
-        audio_data = audio_data.mean(axis=1).astype(np.int16)
+            chunk, dtype=np.int16)
         # 将 chunk 转换为 AudioFrame
         await player.play_frame(audio_data)
+        print(f"播放进度：{i / len(audio.raw_data) * 100:.2f}%")
 
     player.close()
 

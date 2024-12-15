@@ -23,6 +23,8 @@ audio_ctrl = AudioCTRL(buffer_size=1, sample_rate=48000)
 @app.before_serving
 async def start_audio_ctrl():
     # temp function
+    audio_ctrl.create_play_thread()
+    audio_ctrl.create_local_thread()
     await audio_ctrl.play_audio()
     await audio_ctrl.load_local("music/时暮的思眷.wav")
 
@@ -41,7 +43,7 @@ async def offer():
     @pc.on("track")
     async def on_track(track):
         if track.kind == "audio":
-            await audio_ctrl.process_track(connection_id, track)
+            await audio_ctrl.add_track(connection_id, track)
 
     await pc.setRemoteDescription(RTCSessionDescription(sdp=offer_sdp, type="offer"))
     answer = await pc.createAnswer()
