@@ -177,9 +177,9 @@ class AudioCTRL:
             last_chunk_idx = 0
 
             # 从缓冲区读取音频
-            for id in self.buffer:
-                if not self.buffer[id].empty():
-                    mixed_chunk.append(await self.buffer[id].get())
+            mixed_chunk = await asyncio.gather(
+                *[self.buffer[id].get() for id in self.buffer if not self.buffer[id].empty()]
+            )
 
             if self.running and self.playing and self.loading:
                 chunk_idx = await self.get_chunk_idx()
