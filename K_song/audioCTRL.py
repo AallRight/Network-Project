@@ -15,371 +15,244 @@ logging.basicConfig(level=logging.INFO)
 
 
 class LocalAudio:
-    def __init__(self,
-                 sample_rate=48000,
-                 channels=2,
-                 chunk_size=1920):
-        '''
+    def __init__(self, sample_rate=48000, channels=2, chunk_size=1920):
+        """
         本地音频处理模块
-        '''
-        # 基础参数
+        """
         self.sample_rate = sample_rate
         self.channels = channels
         self.chunk_size = chunk_size
+        self.audio_data = None
+        self.total_chunks = 0
 
-        self.local_audio_data = None
-        self.chunk_num = 0
-
-    async def load_local_audio(self, filepath):
+    async def load_audio_file(self, file_path):
         """
-        异步加载本地音频文件（例如音乐）
+        异步加载本地音频文件
         """
-        # 使用 aiofiles 读取文件元数据
-        async with aiofiles.open(filepath, "rb") as file:
-            # 读取文件内容
-            audio_data = await file.read()
+        async with aiofiles.open(file_path, "rb") as file:
+            audio_content = await file.read()
 
-        # 使用 wave 模块处理音频数据
-        with wave.open(filepath, "rb") as wf:
-            # 检查采样率
-            if wf.getframerate() != self.sample_rate:
-                raise ValueError("本地音频文件的采样率与系统设置不一致")
+        with wave.open(file_path, "rb") as wave_file:
+            if wave_file.getframerate() != self.sample_rate:
+                raise ValueError("音频文件的采样率与系统设置不一致")
 
-            # 获取文件帧数
-            total_frames = wf.getnframes()
+            total_frames = wave_file.getnframes()
 
-        # 异步处理音频数据
-        self.local_audio_data = await self.process_audio_data(audio_data)
+        self.audio_data = await self._process_audio_data(audio_content)
 
-    async def process_audio_data(self, audio_data):
+    async def _process_audio_data(self, audio_content):
         """
-        异步处理音频数据：转换为 np.ndarray 并分块
+        异步处理音频数据
         """
-        # 转换为 np.ndarray
-        audio_array = np.frombuffer(audio_data, dtype=np.int16)
+        audio_array = np.frombuffer(audio_content, dtype=np.int16)
+        self.total_chunks = len(audio_array) // self.chunk_size + 1
 
-        # 计算块数
-        self.chunk_num = len(audio_array) // self.chunk_size + 1
-
-        # 填充数据长度为块的整数倍
         audio_array = np.pad(
             audio_array,
-            (0, self.chunk_num * self.chunk_size - len(audio_array)),
+            (0, self.total_chunks * self.chunk_size - len(audio_array)),
             'constant'
         )
 
-        # 分块处理
-        audio_array = audio_array.reshape(self.chunk_num, 1, -1)
-
-        return audio_array
+        return audio_array.reshape(self.total_chunks, 1, -1)
 
 
-class AudioCTRL:
-    def __init__(self,
-                 sample_rate=48000,
-                 channels=2,
-                 buffer_size=1,
-                 chunk_size=1920,
-                 time_interval=0.001):
+class AudioController:
+    def __init__(self, sample_rate=48000, channels=2, buffer_capacity=1, chunk_size=1920, process_interval=0.001):
         """
-        音频控制模块初始化
+        音频控制器模块
         """
-        # 基础参数
+        # 初始化音频控制器
         self.sample_rate = sample_rate
         self.channels = channels
         self.chunk_size = chunk_size
-        self.time_interval = time_interval
+        self.process_interval = process_interval
 
-        # 音频混合器
+        # 初始化音频混合器
         self.mixer = AudioMixer(sample_rate=sample_rate, channels=channels)
 
-        # 音频播放器
+        # 初始化音频播放器
         self.player = AudioPlayer(sample_rate=sample_rate, channels=channels)
 
-        # 音频录音器
+        # 初始化音频录制器
         self.recorder = AudioRecorder(
             sample_rate=sample_rate, chunk_size=chunk_size, channels=channels)
 
-        # 音频缓冲区
-        self.buffer_size = buffer_size
-        self.buffer = {}  # {connection_id: asyncio.Queue}
-        self.local_microphone_id = "microphone"
+        # 初始化音频缓冲区
+        self.buffer_capacity = buffer_capacity
+        self.audio_buffers = {}
+        self.microphone_id = "microphone"
 
-        # 加载本地音频文件
+        # 初始化本地音频处理模块
         self.local_audio = LocalAudio()
 
-        # 时间基准: 用于调整播放时间
-        self.chunk_idx = 0
-
-        # 音量比例：用于调整音量
+        # 初始化音频控制器状态
+        self.current_chunk_index = 0
         self.music_volume = 0.5
-        self.mic_volume = 0.5
-        self.max_volume = 2
+        self.microphone_volume = 0.5
+        self.max_volume = 2.0
 
         # 运行标志
-        self.running = True  # 是否播放声音标志
-        self.loading = False  # 是否加载音频文件标志
-        self.playing = False  # 本地歌曲播放标志
-        self.recording = False  # 麦克风录音标志
+        self.is_running = True
+        self.is_loading_audio = False
+        self.is_music_playing = False
+        self.is_microphone_recording = False
 
-        # 新线程操作
-        # 播放线程
+        # 初始化音频控制器相关线程
         self.play_thread = None
-        self.play_loop = None
+        self.play_event_loop = None
 
-        # 本地麦克风处理线程
-        self.mic_thread = None
-        self.mic_loop = None
+        self.microphone_thread = None
+        self.microphone_event_loop = None
 
-    # * 新建新线程操作
-    def start_loop(self, loop):
-        '''
-        启动新线程
-        '''
+    # * 线程创建相关方法
+    def _start_event_loop_in_thread(self, loop):
         asyncio.set_event_loop(loop)
         loop.run_forever()
 
     def create_play_thread(self):
-        '''
-        启动新线程
-        '''
         loop = asyncio.new_event_loop()
         self.play_thread = threading.Thread(
-            target=self.start_loop, args=(loop,))
+            target=self._start_event_loop_in_thread, args=(loop,))
         self.play_thread.start()
-        self.play_loop = loop
-        logging.info("The play thread is created")
+        self.play_event_loop = loop
+        logging.info("播放线程已创建")
 
-        '''
-        启动新线程
-        '''
+    def create_microphone_thread(self):
         loop = asyncio.new_event_loop()
-        self.local_thread = threading.Thread(
-            target=self.start_loop, args=(loop,))
-        self.local_thread.start()
-        self.local_loop = loop
-        logging.info("The local thread is created")
+        self.microphone_thread = threading.Thread(
+            target=self._start_event_loop_in_thread, args=(loop,))
+        self.microphone_thread.start()
+        self.microphone_event_loop = loop
+        logging.info("麦克风线程已创建")
 
-    def create_mic_thread(self):
-        '''
-        启动新线程
-        '''
-        loop = asyncio.new_event_loop()
-        self.mic_thread = threading.Thread(
-            target=self.start_loop, args=(loop,))
-        self.mic_thread.start()
-        self.mic_loop = loop
-        logging.info("The mic thread is created")
+    # * 音频控制器相关方法
+    async def _play_audio_stream(self):
+        while self.is_running:
+            mixed_chunks = []
 
-    # * 总对外播放操作
+            if self.audio_buffers:
+                mixed_chunks = await asyncio.gather(
+                    *[self.audio_buffers[buffer_id].get() for buffer_id in self.audio_buffers if not self.audio_buffers[buffer_id].empty()]
+                )
 
-    async def _play_audio(self):
-        """
-        播放协程：从缓冲区读取音频数据并输出
-        """
-        while self.running:
+            if self.is_running and self.is_music_playing and self.is_loading_audio:
+                self.current_chunk_index += 1
+                mixed_chunks.append(
+                    (self.local_audio.audio_data[self.current_chunk_index] *
+                     self.music_volume / self.microphone_volume).astype(np.int16)
+                )
 
-            mixed_chunk = []
-            last_chunk_idx = 0
+            mixed_audio = await self.mixer.mix_frames(mixed_chunks)
 
-            # 从缓冲区读取音频
-            mixed_chunk = await asyncio.gather(
-                *[self.buffer[id].get() for id in self.buffer if not self.buffer[id].empty()]
-            )
-
-            if self.running and self.playing and self.loading:
-                self.chunk_idx += 1
-
-                mixed_chunk.append(
-                    (self.local_audio.local_audio_data[self.chunk_idx] * self.music_volume / self.mic_volume).astype(np.int16))  # 本地音乐音量调整
-
-            # 混音
-            mixed_chunk = await self.mixer.mix_frames(mixed_chunk)
-
-            # 播放
-            if mixed_chunk is not None:
-                # 麦克风音量调整
-                await self.player.play_frame((mixed_chunk * self.mic_volume).astype(np.int16))
+            if mixed_audio is not None:
+                await self.player.play_frame((mixed_audio * self.microphone_volume).astype(np.int16))
             else:
-                await asyncio.sleep(self.time_interval/10)
+                await asyncio.sleep(self.process_interval / 10)
 
-    async def play_audio(self):
-        """
-        启动播放任务
-        """
-        # 开启新事件循环
-        self.running = True
-        asyncio.run_coroutine_threadsafe(self._play_audio(), self.play_loop)
-        logging.info("The audio is playing")
-
-    async def stop_audio(self):
-        """
-        停止播放并释放资源
-        """
-        self.running = False
-        self.playing = False
-        self.connecting = False
-        self.player.close()
-        logging.info("The audio is stopped")
-
-    # * 本地歌曲操作
-
-    async def load_local(self, filepath):
-        """
-        异步加载本地音频文件（例如音乐）
-        """
-        await self.local_audio.load_local_audio(filepath)
-        self.loading = True
-
-        # 将chunk_idx设置为0
-        self.chunk_idx = 0
-
-    async def play_local(self):
-        '''
-        启动播放任务
-        '''
-        # 判断本地音频是否加载
-        if not self.loading:
-            logging.info("The local audio is not loaded")
-            return
-
-        # 将本地歌曲播放标志设置为 True
-        self.playing = True
-
-    async def pause_local(self):
-        '''
-        暂停播放
-        '''
-        # 将本地歌曲播放标志设置为 False
-        self.playing = False
-        logging.info("The local audio is paused")
-
-    async def adjust_time(self, time):
-        '''
-        调整播放时间
-        '''
-        # 计算调整的块数
-        # ! 该时间是增量时间，而不是绝对时间
-        chunk_num = int(time * self.sample_rate *
-                        self.channels / self.chunk_size)
-        # 调整chunk_base
-        self.chunk_idx += chunk_num
-        self.chunk_idx = max(
-            0, min(self.chunk_idx, self.local_audio.chunk_num - 1))
-        logging.info(f"Chunk base is set to {self.chunk_idx}")
-
-    async def adjust_volume(self, volume, mic=False):
-        '''
-        调整音量
-        '''
-        # ! 该音量是增量音量，而不是绝对音量
-        if mic:
-            self.mic_volume += volume
-            self.mic_volume = max(0, min(self.mic_volume, self.max_volume))
-            logging.info(
-                f"The microphone volume is adjusted to {self.mic_volume}")
-        else:
-            self.music_volume += volume
-            self.music_volume = max(0, min(self.music_volume, self.max_volume))
-            logging.info(
-                f"The music volume is adjusted to {self.music_volume}")
-
-    # * 远程音频操作
-
-    async def add_track(self, connection_id, track):
-        """
-        添加新的音轨，并启动其处理任务。
-        """
-        asyncio.create_task(self.process_track(connection_id, track))
-        logging.info(f"Track {connection_id} is added and processing started.")
-
-    # * 麦克风操作
-    async def start_record(self):
-        """
-        启动麦克风录音
-        """
-        # 创建麦克风缓冲区
-        self.buffer[self.local_microphone_id] = asyncio.Queue(
-            maxsize=self.buffer_size)
+    async def start_audio_playback(self):
+        self.is_running = True
         asyncio.run_coroutine_threadsafe(
-            self.process_microphone(), self.mic_loop)
-        logging.info("The microphone recording is started")
+            self._play_audio_stream(), self.play_event_loop)
+        logging.info("音频播放已启动")
 
-        # 将麦克风录音标志设置为 True
-        self.recording = True
+    async def stop_audio_playback(self):
+        self.is_running = False
+        self.is_music_playing = False
+        self.player.close()
+        logging.info("音频播放已停止")
 
-    async def pause_record(self):
-        """
-        停止麦克风录音
-        """
-        # 将麦克风录音标志设置为 False
-        self.recording = False
+    # * 本地音乐播放相关方法
+    async def load_music_file(self, file_path):
+        await self.local_audio.load_audio_file(file_path)
+        self.is_loading_audio = True
+        self.current_chunk_index = 0
 
-        # 移除麦克风缓冲区
-        self.buffer.pop(self.local_microphone_id)
-        logging.info("The microphone recording is stopped")
+    async def play_music(self):
+        if not self.is_loading_audio:
+            logging.info("未加载任何音频文件")
+            return
+        self.is_music_playing = True
 
-    # * 音频连接和处理操作
-    # * track1：webrtc音频
-    # * track2：本地音乐音频
-    # * track3：麦克风音频
+    async def pause_music(self):
+        self.is_music_playing = False
+        logging.info("音乐播放已暂停")
 
-    async def process_track(self, connection_id, track):
-        """
-        处理音频轨道
-        远程端的音频控制逻辑直接集成在process中
-        1. 当远程pc连接时，就意味着connecting为True
-        2. 当远程pc断开时，就意味着connecting为False
-        """
+    async def adjust_playback_time(self, time_offset):
+        chunk_offset = int(time_offset * self.sample_rate *
+                           self.channels / self.chunk_size)
+        self.current_chunk_index += chunk_offset
+        self.current_chunk_index = max(
+            0, min(self.current_chunk_index, self.local_audio.total_chunks - 1))
+        logging.info(f"当前播放块索引已调整至 {self.current_chunk_index}")
 
-        # 创建该轨道的音频缓冲区
-        self.buffer[connection_id] = asyncio.Queue(
-            maxsize=self.buffer_size)
-        logging.info(f"Buffer of {connection_id} is created")
+    async def adjust_volume(self, volume_delta, is_microphone=False):
+        if is_microphone:
+            self.microphone_volume += volume_delta
+            self.microphone_volume = max(
+                0, min(self.microphone_volume, self.max_volume))
+            logging.info(f"麦克风音量调整为 {self.microphone_volume}")
+        else:
+            self.music_volume += volume_delta
+            self.music_volume = max(0, min(self.music_volume, self.max_volume))
+            logging.info(f"音乐音量调整为 {self.music_volume}")
 
-        # 实时接收音频并且处理
-        while self.running:
+    # * 远程音频流处理相关方法
+    async def add_audio_track(self, connection_id, track):
+        asyncio.create_task(self._process_audio_track(connection_id, track))
+        logging.info(f"音频轨道 {connection_id} 已添加")
+
+    # * 麦克风录音相关方法
+    async def start_microphone_recording(self):
+        self.audio_buffers[self.microphone_id] = asyncio.Queue(
+            maxsize=self.buffer_capacity)
+        asyncio.run_coroutine_threadsafe(
+            self._process_microphone_audio(), self.microphone_event_loop)
+        logging.info("麦克风录音已启动")
+        self.is_microphone_recording = True
+
+    async def stop_microphone_recording(self):
+        self.is_microphone_recording = False
+        self.audio_buffers.pop(self.microphone_id, None)
+        logging.info("麦克风录音已停止")
+
+    # * 音频流处理相关方法
+    async def _process_audio_track(self, connection_id, track):
+        self.audio_buffers[connection_id] = asyncio.Queue(
+            maxsize=self.buffer_capacity)
+        logging.info(f"已创建缓冲区: {connection_id}")
+
+        while self.is_running:
             try:
-                # 从音频轨道接收音频帧
                 frame = await track.recv()
-                audio_data = frame.to_ndarray()  # 转换为 NumPy 数组
-                if self.buffer[connection_id].full():
-                    await self.buffer[connection_id].get()
-
-                # 将音频帧放入缓冲区
-                await self.buffer[connection_id].put(audio_data)
-                await asyncio.sleep(self.time_interval)
+                audio_data = frame.to_ndarray()
+                if self.audio_buffers[connection_id].full():
+                    await self.audio_buffers[connection_id].get()
+                await self.audio_buffers[connection_id].put(audio_data)
+                await asyncio.sleep(self.process_interval)
             except Exception as e:
-                # 出现错误时关闭
-                self.buffer.pop(connection_id)
-                logging.info(f"The buffer of {connection_id} is removed")
+                self.audio_buffers.pop(connection_id, None)
+                logging.info(f"缓冲区 {connection_id} 已移除")
                 break
 
-        logging.info(f"Track {connection_id} processing is stopped")
+        logging.info(f"音轨 {connection_id} 处理已停止")
 
-    async def process_microphone(self):
-        """
-        处理麦克风音频
-        """
-        while self.recording and self.running:
-            # 从麦克风录音
-            audio_data = await self.recorder.record_frame()
+    # * 麦克风音频处理相关方法
+    async def _process_microphone_audio(self):
+        while self.is_microphone_recording and self.is_running:
+            audio_frame = await self.recorder.record_frame()
 
-            # 将音频帧放入缓冲区
-            if self.buffer[self.local_microphone_id].full():
-                await self.buffer[self.local_microphone_id].get()
+            if self.audio_buffers[self.microphone_id].full():
+                await self.audio_buffers[self.microphone_id].get()
 
-            # 将音频帧放入缓冲区
-            await self.buffer[self.local_microphone_id].put(audio_data)
-            await asyncio.sleep(self.time_interval)
-        logging.info("The microphone processing is stopped")
+            await self.audio_buffers[self.microphone_id].put(audio_frame)
+            await asyncio.sleep(self.process_interval)
+
+        logging.info("麦克风音频处理已停止")
 
 
-# 示例用法
 if __name__ == "__main__":
-
     async def main():
-        local = LocalAudio()
-        await local.load_local_audio("music/时暮的思眷.wav")
+        audio_controller = AudioController()
+        await audio_controller.load_music_file("music/sample.wav")
 
     asyncio.run(main())

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebRTC Audio Recording</title>
+    <title>WebRTC Audio Control</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -17,21 +17,29 @@
             height: 100vh;
         }
 
-        .button-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
+        .container {
             background: #fff;
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
-            max-width: 600px;
-            justify-content: center;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .row:last-child {
+            margin-bottom: 0;
         }
 
         button {
-            flex: 1 1 calc(33.333% - 20px);
-            padding: 15px 10px;
+            flex: 1;
+            padding: 15px;
             font-size: 16px;
             border: none;
             border-radius: 8px;
@@ -50,99 +58,137 @@
             transform: translateY(-3px);
         }
 
-        button#connect {
+        button.connect {
             background-color: #4caf50;
         }
 
-        button#connect:hover:not(:disabled) {
+        button.connect:hover:not(:disabled) {
             background-color: #45a049;
         }
 
-        button#disconnect {
+        button.disconnect {
             background-color: #f44336;
         }
 
-        button#disconnect:hover:not(:disabled) {
+        button.disconnect:hover:not(:disabled) {
             background-color: #e53935;
         }
 
-        button#play {
+        button.play {
             background-color: #2196f3;
         }
 
-        button#play:hover:not(:disabled) {
+        button.play:hover:not(:disabled) {
             background-color: #1976d2;
         }
 
-        button#pause {
+        button.pause {
             background-color: #ff9800;
         }
 
-        button#pause:hover:not(:disabled) {
+        button.pause:hover:not(:disabled) {
             background-color: #fb8c00;
         }
 
-        button#forward {
+        button.forward {
             background-color: #9c27b0;
         }
 
-        button#forward:hover:not(:disabled) {
+        button.forward:hover:not(:disabled) {
             background-color: #8e24aa;
         }
 
-        button#backward {
+        button.backward {
             background-color: #673ab7;
         }
 
-        button#backward:hover:not(:disabled) {
+        button.backward:hover:not(:disabled) {
             background-color: #5e35b1;
         }
 
-        button#open_mic {
+        button.open-mic {
             background-color: #00bcd4;
         }
 
-        button#open_mic:hover:not(:disabled) {
+        button.open-mic:hover:not(:disabled) {
             background-color: #00acc1;
         }
 
-        button#close_mic {
+        button.close-mic {
             background-color: #ff5722;
         }
 
-        button#close_mic:hover:not(:disabled) {
+        button.close-mic:hover:not(:disabled) {
             background-color: #e64a19;
         }
 
+        button.volume-up {
+            background-color: #3f51b5;
+        }
+
+        button.volume-up:hover:not(:disabled) {
+            background-color: #3949ab;
+        }
+
+        button.volume-down {
+            background-color: #607d8b;
+        }
+
+        button.volume-down:hover:not(:disabled) {
+            background-color: #546e7a;
+        }
+
         @media (max-width: 600px) {
-            .button-container {
+            .row {
                 flex-direction: column;
                 gap: 10px;
             }
 
             button {
-                flex: 1 1 100%;
+                width: 100%;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="button-container">
-        <button id="connect">Start Recording</button>
-        <button id="disconnect" disabled>End Recording</button>
-        <button id="play">Play</button>
-        <button id="pause" disabled>Pause</button>
-        <button id="forward" disabled>Forward</button>
-        <button id="backward" disabled>Backward</button>
-        <button id="open_mic">Open Mic</button>
-        <button id="close_mic" disabled>Close Mic</button>
-        <button id="mic_volume_up">Mic Volume Up</button>
-        <button id="mic_volume_down">Mic Volume Down</button>
-        <button id="music_volume_up">Music Volume Up</button>
-        <button id="music_volume_down">Music Volume Down</button>
+    <div class="container">
+        <!-- Recording Controls -->
+        <div class="row">
+            <button class="connect" id="connect">Start Recording</button>
+            <button class="disconnect" id="disconnect" disabled>Stop Recording</button>
+        </div>
+
+        <!-- Playback Controls -->
+        <div class="row">
+            <button class="play" id="play-music">Play</button>
+            <button class="pause" id="pause-music" disabled>Pause</button>
+        </div>
+        <div class="row">
+            <button class="forward" id="forward-music" disabled>Forward</button>
+            <button class="backward" id="backward-music" disabled>Backward</button>
+        </div>
+
+        <!-- Microphone Controls -->
+        <div class="row">
+            <button class="open-mic" id="open-mic">Open Mic</button>
+            <button class="close-mic" id="close-mic" disabled>Close Mic</button>
+        </div>
+
+        <!-- Mic Volume Controls -->
+        <div class="row">
+            <button class="volume-up" id="mic-volume-up">Mic Volume Up</button>
+            <button class="volume-down" id="mic-volume-down">Mic Volume Down</button>
+        </div>
+
+        <!-- Speaker Volume Controls -->
+        <div class="row">
+            <button class="volume-up" id="music-volume-up">Music Volume Up</button>
+            <button class="volume-down" id="music-volume-down">Music Volume Down</button>
+        </div>
+
+        <!-- Audio Element -->
+        <!-- <audio id="audio" controls></audio> -->
     </div>
     <script src="client.js"></script>
 </body>
-
-</html>

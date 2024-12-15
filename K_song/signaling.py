@@ -3,10 +3,11 @@ import logging
 from quart import Quart, request, jsonify
 from quart_cors import cors
 from aiortc import RTCPeerConnection, RTCSessionDescription
-from audioCTRL import AudioCTRL
+from audioCTRL import AudioController
 import json
 import uuid
 
+# 创建 Quart 应用
 app = Quart(__name__)
 app = cors(app, allow_origin="*")
 
@@ -17,35 +18,34 @@ logging.basicConfig(level=logging.INFO)
 pcs = {}  # {connection_id: RTCPeerConnection}
 
 # 创建 AudioCTRL 实例
-audio_ctrl = AudioCTRL(buffer_size=1, sample_rate=48000)
+audio_ctrl = AudioController(buffer_capacity=1, sample_rate=48000)
 
 
 @app.before_serving
 async def start_audio_ctrl():
-    # temp function
+    """初始化音频控制器"""
     audio_ctrl.create_play_thread()
-    audio_ctrl.create_mic_thread()
+    audio_ctrl.create_microphone_thread()
 
-    # temp function
-    await audio_ctrl.play_audio()
-    await audio_ctrl.load_local("music/时暮的思眷.wav")
+    await audio_ctrl.start_audio_playback()
+    await audio_ctrl.load_music_file("music/时暮的思眷.wav")
 
 
 @app.route("/offer", methods=["POST"])
 async def offer():
-    # 接收到 offer 后返回 answer
+    """处理 WebRTC offer 并返回 answer"""
     offer_sdp = (await request.get_json()).get("sdp")
 
     # 创建新的 RTCPeerConnection 实例
     connection_id = str(uuid.uuid4())
     pc = RTCPeerConnection()
-    pcs[connection_id] = pc  # 保存连接到字典中
+    pcs[connection_id] = pc
     logging.info(f"Connection {connection_id} created")
 
     @pc.on("track")
     async def on_track(track):
         if track.kind == "audio":
-            await audio_ctrl.add_track(connection_id, track)
+            await audio_ctrl.add_audio_track(connection_id, track)
 
     await pc.setRemoteDescription(RTCSessionDescription(sdp=offer_sdp, type="offer"))
     answer = await pc.createAnswer()
@@ -54,13 +54,13 @@ async def offer():
     return jsonify({
         "sdp": pc.localDescription.sdp,
         "type": pc.localDescription.type,
-        "connection_id": connection_id  # 返回连接 ID
+        "connection_id": connection_id
     })
 
 
 @app.route("/ice-candidate/<connection_id>", methods=["POST"])
 async def ice_candidate(connection_id):
-    # ICE candidate 交换
+    """处理 ICE candidate"""
     data = await request.get_json()
     candidate = data.get("candidate")
     if connection_id in pcs:
@@ -73,9 +73,9 @@ async def ice_candidate(connection_id):
 
 @app.route("/close/<connection_id>", methods=["POST"])
 async def close_connection(connection_id):
-    # 关闭指定连接
+    """关闭指定连接"""
     if connection_id in pcs:
-        pc = pcs.pop(connection_id)  # 从字典中删除连接
+        pc = pcs.pop(connection_id)
         await pc.close()
         logging.info(f"Connection {connection_id} closed")
         return jsonify({"message": "Connection closed"})
@@ -85,25 +85,29 @@ async def close_connection(connection_id):
 
 @app.route("/play_local", methods=["POST"])
 async def play_local():
-    await audio_ctrl.play_local()
+    """播放本地音频"""
+    await audio_ctrl.play_music()
     return jsonify({"message": "Local audio playing"})
 
 
 @app.route("/pause_local", methods=["POST"])
-async def stop_local():
-    await audio_ctrl.pause_local()
+async def pause_local():
+    """暂停本地音频播放"""
+    await audio_ctrl.pause_music()
     return jsonify({"message": "Local audio stopped"})
 
 
 @app.route("/adjust_time", methods=["POST"])
 async def adjust_time():
+    """调整播放时间"""
     time = (await request.get_json()).get("time")
-    await audio_ctrl.adjust_time(time)
+    await audio_ctrl.adjust_playback_time(time)
     return jsonify({"message": "Time adjusted"})
 
 
 @app.route("/mic_volume", methods=["POST"])
 async def mic_volume():
+    """调整麦克风音量"""
     volume = (await request.get_json()).get("volume")
     await audio_ctrl.adjust_volume(volume, True)
     return jsonify({"message": "Mic volume adjusted"})
@@ -111,6 +115,7 @@ async def mic_volume():
 
 @app.route("/music_volume", methods=["POST"])
 async def music_volume():
+    """调整音乐音量"""
     volume = (await request.get_json()).get("volume")
     await audio_ctrl.adjust_volume(volume, False)
     return jsonify({"message": "Music volume adjusted"})
@@ -118,15 +123,16 @@ async def music_volume():
 
 @app.route("/open_mic", methods=["POST"])
 async def open_mic():
-    await audio_ctrl.start_record()
+    """打开麦克风"""
+    await audio_ctrl.start_microphone_recording()
     return jsonify({"message": "Mic opened"})
 
 
 @app.route("/close_mic", methods=["POST"])
 async def close_mic():
-    await audio_ctrl.pause_record()
+    """关闭麦克风"""
+    await audio_ctrl.stop_microphone_recording()
     return jsonify({"message": "Mic closed"})
-
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=9000)
