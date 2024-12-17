@@ -1,5 +1,5 @@
 // 配置服务器地址
-const SERVER_IP = "127.0.0.1"; // 替换为服务器地址
+const SERVER_IP = "10.180.250.50"; // 替换为服务器地址
 const SERVER_PORT = 9000;
 
 let peerConnection = null; // RTCPeerConnection 实例
@@ -8,7 +8,7 @@ let connectionId = null; // 服务器返回的连接 ID
 
 // 工具函数：发送数据到服务器
 async function sendToServer(endpoint, data) {
-    const url = `http://${SERVER_IP}:${SERVER_PORT}/${endpoint}`;
+    const url = `https://${SERVER_IP}:${SERVER_PORT}/${endpoint}`;
     try {
         const response = await fetch(url, {
             method: "POST",

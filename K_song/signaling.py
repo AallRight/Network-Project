@@ -1,15 +1,21 @@
 import asyncio
 import logging
-from quart import Quart, request, jsonify
+from quart import Quart, request, jsonify, send_from_directory
 from quart_cors import cors
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from audioCTRL import AudioController
 import json
 import uuid
+import os
 
 # 创建 Quart 应用
 app = Quart(__name__)
 app = cors(app, allow_origin="*")
+
+# 设置静态文件路径
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app.static_folder = os.path.join(BASE_DIR, "static")
+
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +25,18 @@ pcs = {}  # {connection_id: RTCPeerConnection}
 
 # 创建 AudioCTRL 实例
 audio_ctrl = AudioController(buffer_capacity=1, sample_rate=48000)
+
+
+@app.route("/")
+async def index():
+    # 返回 index.html
+    return await send_from_directory(app.static_folder,
+                                     "index.html")
+
+
+@app.route('/<path:filename>')
+async def static_files(filename):
+    return await send_from_directory(app.static_folder, filename)
 
 
 @app.before_serving
@@ -135,4 +153,5 @@ async def close_mic():
     return jsonify({"message": "Mic closed"})
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=9000)
+    # app.run(host="127.0.0.1", port=9000)
+    app.run(host="0.0.0.0", port=9000)  # 监听所有公网 IP
