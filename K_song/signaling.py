@@ -46,7 +46,7 @@ async def start_audio_ctrl():
     audio_ctrl.create_microphone_thread()
 
     await audio_ctrl.start_audio_playback()
-    await audio_ctrl.load_music_file("music/时暮的思眷.wav")
+    await audio_ctrl.load_music_file("K_song/music/时暮的思眷.wav")
 
 
 @app.route("/offer", methods=["POST"])

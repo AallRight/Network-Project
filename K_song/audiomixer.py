@@ -26,6 +26,6 @@ class AudioMixer:
         mixed_audio = await asyncio.to_thread(
             np.mean, audio_data_list, axis=0
         )
-        mixed_audio = mixed_audio.astype(audio_data_list[0].dtype)
+        mixed_audio = mixed_audio
 
         return mixed_audio

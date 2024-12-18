@@ -138,8 +138,8 @@ class AudioController:
             if self.is_running and self.is_music_playing and self.is_loading_audio:
                 self.current_chunk_index += 1
                 mixed_chunks.append(
-                    (self.local_audio.audio_data[self.current_chunk_index] *
-                     self.music_volume / self.microphone_volume).astype(np.int16)
+                    self.local_audio.audio_data[self.current_chunk_index] *
+                    self.music_volume / self.microphone_volume
                 )
 
             mixed_audio = await self.mixer.mix_frames(mixed_chunks)
@@ -203,11 +203,15 @@ class AudioController:
 
     # * 麦克风录音相关方法
     async def start_microphone_recording(self):
+
         self.audio_buffers[self.microphone_id] = asyncio.Queue(
             maxsize=self.buffer_capacity)
+        logging.info("已创建麦克风音频缓冲区")
+
         asyncio.run_coroutine_threadsafe(
             self._process_microphone_audio(), self.microphone_event_loop)
         logging.info("麦克风录音已启动")
+
         self.is_microphone_recording = True
 
     async def stop_microphone_recording(self):
@@ -219,7 +223,7 @@ class AudioController:
     async def _process_audio_track(self, connection_id, track):
         self.audio_buffers[connection_id] = asyncio.Queue(
             maxsize=self.buffer_capacity)
-        logging.info(f"已创建缓冲区: {connection_id}")
+        logging.info(f"已创远程音频流建缓冲区: {connection_id}")
 
         while self.is_running:
             try:
@@ -239,13 +243,16 @@ class AudioController:
     # * 麦克风音频处理相关方法
     async def _process_microphone_audio(self):
         while self.is_microphone_recording and self.is_running:
-            audio_frame = await self.recorder.record_frame()
+            try:
+                audio_frame = await self.recorder.record_frame()
 
-            if self.audio_buffers[self.microphone_id].full():
-                await self.audio_buffers[self.microphone_id].get()
+                if self.audio_buffers[self.microphone_id].full():
+                    await self.audio_buffers[self.microphone_id].get()
 
-            await self.audio_buffers[self.microphone_id].put(audio_frame)
-            await asyncio.sleep(self.process_interval)
+                await self.audio_buffers[self.microphone_id].put(audio_frame)
+                await asyncio.sleep(self.process_interval)
+            except Exception as e:
+                break
 
         logging.info("麦克风音频处理已停止")
 
