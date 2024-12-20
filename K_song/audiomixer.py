@@ -24,8 +24,7 @@ class AudioMixer:
 
         # 将所有音频帧求和取平均，假定所有音频帧的长度是一致的
         mixed_audio = await asyncio.to_thread(
-            np.mean, audio_data_list, axis=0
+            np.sum, audio_data_list, axis=0
         )
-        mixed_audio = mixed_audio
 
         return mixed_audio
