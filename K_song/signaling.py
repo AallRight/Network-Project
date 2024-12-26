@@ -97,6 +97,10 @@ async def websocket_handler():
     logging.info(f"收到客户端消息: {message}")
 
     # 处理客户端消息
+    if message["function"] == "load_music_file":
+        await audio_ctrl.load_music_file(message["file_path"])
+        await websocket.send(json.dumps({"response": "音乐文件已加载"}))
+
     if message["function"] == "play_music":
         await audio_ctrl.play_music()
         await websocket.send(json.dumps({"response": "音乐已开始播放"}))
@@ -121,6 +125,17 @@ async def websocket_handler():
     elif message["function"] == "stop_microphone_recording":
         await audio_ctrl.stop_microphone_recording()
         await websocket.send(json.dumps({"response": "麦克风录音已停止"}))
+
+    elif message["function"] == "query_music_status":
+        status = {
+            "is_loading_audio": audio_ctrl.is_loading_audio,
+            "is_music_playing": audio_ctrl.is_music_playing,
+            "current_chunk_index": audio_ctrl.current_chunk_index,
+            "total_chunks": audio_ctrl.total_chunks,
+            "microphone_volume": audio_ctrl.microphone_volume,
+            "music_volume": audio_ctrl.music_volume,
+        }
+        await websocket.send(json.dumps(status))
 
     await websocket.send(json.dumps({"response": "消息处理完成"}))
 

@@ -167,10 +167,12 @@ class AudioController:
         self.is_loading_audio = True
         self.current_chunk_index = 0
 
-    async def play_music(self):
+    async def play_music(self, time_offset=0):
         if not self.is_loading_audio:
             logging.info("未加载任何音频文件")
             return
+        self.current_chunk_index = int(
+            time_offset * self.sample_rate * self.channels / self.chunk_size)
         self.is_music_playing = True
 
     async def pause_music(self):
