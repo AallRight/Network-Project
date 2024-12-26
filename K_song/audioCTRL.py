@@ -1,6 +1,4 @@
-import pyaudio
 import numpy as np
-from av.audio.frame import AudioFrame
 import asyncio
 import wave
 from audiomixer import AudioMixer
@@ -9,7 +7,6 @@ from audiorecorder import AudioRecorder
 import aiofiles
 import logging
 import threading
-import json
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -88,6 +85,7 @@ class AudioController:
 
         # 初始化音频控制器状态
         self.current_chunk_index = 0
+        self.total_chunks = 0
         self.music_volume = 0.5
         self.microphone_volume = 0.5
         self.max_volume = 2.0
@@ -136,7 +134,7 @@ class AudioController:
                     *[self.audio_buffers[buffer_id].get() for buffer_id in self.audio_buffers if not self.audio_buffers[buffer_id].empty()]
                 )
 
-            if self.is_running and self.is_music_playing and self.is_loading_audio:
+            if self.is_running and self.is_music_playing and self.is_loading_audio and self.current_chunk_index < self.total_chunks:
                 self.current_chunk_index += 1
                 mixed_chunks.append(
                     self.local_audio.audio_data[self.current_chunk_index] *
@@ -165,6 +163,7 @@ class AudioController:
     # * 本地音乐播放相关方法
     async def load_music_file(self, file_path):
         await self.local_audio.load_audio_file(file_path)
+        self.total_chunks = self.local_audio.total_chunks
         self.is_loading_audio = True
         self.current_chunk_index = 0
 
