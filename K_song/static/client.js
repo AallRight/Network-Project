@@ -1,6 +1,8 @@
 // 配置服务器地址
-const SERVER_IP = "10.180.250.50"; // 替换为服务器地址
-const SERVER_PORT = 9000;
+// const SERVER_IP = "10.180.250.50"; // 替换为服务器地址
+const SERVER_IP = "127.0.0.1"; // 替换为服务器地址
+const SERVER_PORT = 9000; // websocket 服务器端口
+const RTC_PORT = 5000; // RTC 服务器端口
 
 let peerConnection = null; // RTCPeerConnection 实例
 let localStream = null; // 本地音频流
@@ -8,7 +10,7 @@ let connectionId = null; // 服务器返回的连接 ID
 
 // 工具函数：发送数据到服务器
 async function sendToServer(endpoint, data) {
-    const url = `https://${SERVER_IP}:${SERVER_PORT}/${endpoint}`;
+    const url = `http://${SERVER_IP}:${SERVER_PORT}/${endpoint}`;
     try {
         const response = await fetch(url, {
             method: "POST",
@@ -21,6 +23,23 @@ async function sendToServer(endpoint, data) {
         console.error(`Error sending to ${endpoint}:`, error);
     }
 }
+
+// 工具函数：发送数据到 RTC 服务器
+async function sendToRTC(endpoint, data) {
+    const url = `http://${SERVER_IP}:${RTC_PORT}/${endpoint}`;
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error(response.statusText);
+        return await response.json();
+    } catch (error) {
+        console.error(`Error sending to ${endpoint}:`, error);
+    }
+}
+
 
 // 工具函数：启用/禁用按钮
 function toggleButtonState(buttonId, isEnabled) {
@@ -55,7 +74,7 @@ async function startRecording() {
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
 
-        const response = await sendToServer("offer", { sdp: offer.sdp });
+        const response = await sendToRTC("offer", { sdp: offer.sdp });
         connectionId = response.connection_id;
 
         // 设置服务器返回的 Answer
@@ -67,7 +86,7 @@ async function startRecording() {
         // 处理 ICE 候选
         peerConnection.onicecandidate = async event => {
             if (event.candidate) {
-                await sendToServer(`ice-candidate/${connectionId}`, { candidate: event.candidate });
+                await sendToRTC(`ice-candidate/${connectionId}`, { candidate: event.candidate });
             }
         };
 
@@ -83,7 +102,7 @@ async function startRecording() {
 async function stopRecording() {
     try {
         if (localStream) localStream.getTracks().forEach(track => track.stop());
-        if (connectionId) await sendToServer(`close/${connectionId}`, {});
+        if (connectionId) await sendToRTC(`close/${connectionId}`, {});
         if (peerConnection) peerConnection.close();
 
         peerConnection = null;

@@ -9,6 +9,7 @@ from audiorecorder import AudioRecorder
 import aiofiles
 import logging
 import threading
+import json
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -256,11 +257,3 @@ class AudioController:
                 break
 
         logging.info("麦克风音频处理已停止")
-
-
-if __name__ == "__main__":
-    async def main():
-        audio_controller = AudioController()
-        await audio_controller.load_music_file("music/sample.wav")
-
-    asyncio.run(main())
