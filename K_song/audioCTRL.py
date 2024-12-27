@@ -141,10 +141,11 @@ class AudioController:
                     self.music_volume / self.microphone_volume
                 )
 
-            mixed_audio = await self.mixer.mix_frames(mixed_chunks)
+            mixed_audio = self.mixer.mix_frames(mixed_chunks)
 
             if mixed_audio is not None:
-                await self.player.play_frame((mixed_audio * self.microphone_volume).astype(np.int16))
+                self.player.play_frame(
+                    (mixed_audio * self.microphone_volume).astype(np.int16))
             else:
                 await asyncio.sleep(self.process_interval / 10)
 

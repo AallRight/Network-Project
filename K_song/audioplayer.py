@@ -20,16 +20,16 @@ class AudioPlayer:
                                   output=True)
 
         # ?debug: 初始化WAV文件写入器
-        self.wav_writer = wave.open("output.wav", "wb")
-        self.wav_writer.setnchannels(channels)
-        self.wav_writer.setsampwidth(self.p.get_sample_size(format))
-        self.wav_writer.setframerate(sample_rate)
+        # self.wav_writer = wave.open("output.wav", "wb")
+        # self.wav_writer.setnchannels(channels)
+        # self.wav_writer.setsampwidth(self.p.get_sample_size(format))
+        # self.wav_writer.setframerate(sample_rate)
 
-    async def play_frame(self, audio_data: np.ndarray):
+    def play_frame(self, audio_data: np.ndarray):
         # 将 AudioFrame 转换为字节对象
         self.stream.write(audio_data.tobytes())
         # ?debug: 写入WAV文件
-        self.wav_writer.writeframes(audio_data.tobytes())
+        # self.wav_writer.writeframes(audio_data.tobytes())
 
     def close(self):
         self.stream.stop_stream()

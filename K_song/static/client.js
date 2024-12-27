@@ -9,20 +9,20 @@ let localStream = null; // 本地音频流
 let connectionId = null; // 服务器返回的连接 ID
 
 // 工具函数：发送数据到服务器
-// async function sendToServer(endpoint, data) {
-//     const url = `http://${SERVER_IP}:${SERVER_PORT}/${endpoint}`;
-//     try {
-//         const response = await fetch(url, {
-//             method: "POST",
-//             headers: { "Content-Type": "application/json" },
-//             body: JSON.stringify(data),
-//         });
-//         if (!response.ok) throw new Error(response.statusText);
-//         return await response.json();
-//     } catch (error) {
-//         console.error(`Error sending to ${endpoint}:`, error);
-//     }
-// }
+async function sendToServer(endpoint, data) {
+    const url = `http://${SERVER_IP}:${SERVER_PORT}/${endpoint}`;
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error(response.statusText);
+        return await response.json();
+    } catch (error) {
+        console.error(`Error sending to ${endpoint}:`, error);
+    }
+}
 
 // 工具函数：发送数据到 RTC 服务器
 async function sendToRTC(endpoint, data) {

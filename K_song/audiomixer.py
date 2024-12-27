@@ -10,7 +10,7 @@ class AudioMixer:
         self.sample_rate = sample_rate
         self.channels = channels
 
-    async def mix_frames(self, audio_data_list: list[np.ndarray]) -> np.ndarray:
+    def mix_frames(self, audio_data_list: list[np.ndarray]) -> np.ndarray:
         """
         异步混合音频帧
         """
@@ -23,8 +23,6 @@ class AudioMixer:
             return None
 
         # 将所有音频帧求和取平均，假定所有音频帧的长度是一致的
-        mixed_audio = await asyncio.to_thread(
-            np.sum, audio_data_list, axis=0
-        )
+        mixed_audio = np.sum(audio_data_list, axis=0)
 
         return mixed_audio
