@@ -3,36 +3,43 @@ from quart import Quart, request, jsonify, send_from_directory
 from quart_cors import cors
 import json
 import os
+import ssl
 import websockets
 
 # 创建 Quart 应用
 app = Quart(__name__)
-app = cors(app, allow_origin="*")
+app = cors(app, allow_origin="*", allow_methods="*", allow_headers="*")
 
-# 设置静态文件路径
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-app.static_folder = os.path.join(BASE_DIR, "static")
+# # 设置静态文件路径
+# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# app.static_folder = os.path.join(BASE_DIR, "static")
 
-
-@app.route("/")
-async def index():
-    # 返回 index.html
-    return await send_from_directory(app.static_folder,
-                                     "index.html")
+# # 配置日志
+# logging.basicConfig(level=logging.INFO)
 
 
-@app.route('/<path:filename>')
-async def static_files(filename):
-    return await send_from_directory(app.static_folder, filename)
+# @app.route("/")
+# async def index():
+#     # 返回 index.html
+#     return await send_from_directory(app.static_folder,
+#                                      "index.html")
+
+
+# @app.route('/<path:filename>')
+# async def static_files(filename):
+#     return await send_from_directory(app.static_folder, filename)
 
 
 # * 使用 websocket 和 AudioCTRL 进程间通信
-url_ctrl = "ws://localhost:5000/audio_ctrl"
+url_ctrl = "wss://10.180.250.50:5000/audio_ctrl"
+ssl_context = ssl._create_unverified_context()
 
 
 async def send_to_CTRL(message):
     # 连接到音频控制器
-    socket_ctrl = await websockets.connect(url_ctrl, origin="http://localhost:9000")
+    socket_ctrl = await websockets.connect(url_ctrl,
+                                           origin="*",
+                                           ssl=ssl_context)
     logging.info("连接到音频控制器")
 
     await socket_ctrl.send(json.dumps(message))
@@ -106,5 +113,6 @@ async def close_mic():
     return jsonify({"message": "Mic closed"})
 
 if __name__ == '__main__':
-    app.run(host="127.0.0.1", port=9000)  # 监听本地 IP
-    # app.run(host="0.0.0.0", port=9000)  # 监听所有公网 IP
+    # 监听所有公网 IP
+    app.run(host="0.0.0.0",
+            port=9000)

@@ -1,14 +1,15 @@
 import logging
-from quart import Quart, request, jsonify, websocket
+from quart import Quart, request, jsonify, websocket, send_from_directory
 from quart_cors import cors
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from audioCTRL import AudioController
 import json
 import uuid
+import os
 
 # 创建 Quart 应用
 app = Quart(__name__)
-app = cors(app, allow_origin="*")
+app = cors(app, allow_origin="*", allow_methods="*", allow_headers="*")
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -22,6 +23,26 @@ audio_ctrl = AudioController(buffer_capacity=1,
                              sample_rate=48000,
                              process_interval=0.001,
                              chunk_size=1920)
+
+
+# 设置静态文件路径
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app.static_folder = os.path.join(BASE_DIR, "static")
+
+# 配置日志
+logging.basicConfig(level=logging.INFO)
+
+
+@app.route("/")
+async def index():
+    # 返回 index.html
+    return await send_from_directory(app.static_folder,
+                                     "index.html")
+
+
+@app.route('/<path:filename>')
+async def static_files(filename):
+    return await send_from_directory(app.static_folder, filename)
 
 
 @app.before_serving
@@ -141,5 +162,6 @@ async def websocket_handler():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000)  # 监听本地 IP
-    # app.run(host="0.0.0.0", port=5000)  # 监听所有公网 IP
+    # 监听所有公网 IP
+    app.run(host="0.0.0.0",
+            port=5000)

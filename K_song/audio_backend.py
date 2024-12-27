@@ -8,12 +8,12 @@ import json
 # from server.constant import *
 
 # * 使用 websocket 和 AudioCTRL 进程间通信
-url_ctrl = "ws://localhost:5000/audio_ctrl"
+url_ctrl = "wss://0.0.0.0:5000/audio_ctrl"
 
 
 async def send_to_CTRL(message):
     # 连接到音频控制器
-    socket_ctrl = await websockets.connect(url_ctrl, origin="http://localhost:9000")
+    socket_ctrl = await websockets.connect(url_ctrl, origin="https://0.0.0.0:9000")
     logging.info("连接到音频控制器")
 
     await socket_ctrl.send(json.dumps(message))
