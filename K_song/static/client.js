@@ -1,7 +1,7 @@
 // 配置服务器地址
-const SERVER_IP = "10.180.250.50"; // 替换为服务器地址
-const SERVER_PORT = 9000; // websocket 服务器端口
-const RTC_PORT = 5000; // RTC 服务器端口
+const SERVER_IP = "172.20.10.3"; // 替换为服务器地址
+const SERVER_PORT = 9003; // websocket 服务器端口
+const RTC_PORT = 9002; // RTC 服务器端口
 
 let peerConnection = null; // RTCPeerConnection 实例
 let localStream = null; // 本地音频流

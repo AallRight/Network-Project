@@ -229,6 +229,7 @@ class AudioController:
             maxsize=self.buffer_capacity)
         logging.info(f"已创远程音频流建缓冲区: {connection_id}")
 
+        idx = 0
         while self.is_running:
             try:
                 frame = await track.recv()

@@ -10,28 +10,28 @@ import websockets
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods="*", allow_headers="*")
 
-# # 设置静态文件路径
-# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# app.static_folder = os.path.join(BASE_DIR, "static")
+# 设置静态文件路径
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app.static_folder = os.path.join(BASE_DIR, "static")
 
-# # 配置日志
-# logging.basicConfig(level=logging.INFO)
-
-
-# @app.route("/")
-# async def index():
-#     # 返回 index.html
-#     return await send_from_directory(app.static_folder,
-#                                      "index.html")
+# 配置日志
+logging.basicConfig(level=logging.INFO)
 
 
-# @app.route('/<path:filename>')
-# async def static_files(filename):
-#     return await send_from_directory(app.static_folder, filename)
+@app.route("/")
+async def index():
+    # 返回 index.html
+    return await send_from_directory(app.static_folder,
+                                     "index.html")
+
+
+@app.route('/<path:filename>')
+async def static_files(filename):
+    return await send_from_directory(app.static_folder, filename)
 
 
 # * 使用 websocket 和 AudioCTRL 进程间通信
-url_ctrl = "wss://10.180.250.50:5000/audio_ctrl"
+url_ctrl = "wss://172.20.10.3:9002/audio_ctrl"
 ssl_context = ssl._create_unverified_context()
 
 
@@ -115,4 +115,4 @@ async def close_mic():
 if __name__ == '__main__':
     # 监听所有公网 IP
     app.run(host="0.0.0.0",
-            port=9000)
+            port=9003)

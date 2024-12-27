@@ -19,7 +19,7 @@ pcs = {}  # {connection_id: RTCPeerConnection}
 
 
 # 创建音频控制器实例
-audio_ctrl = AudioController(buffer_capacity=1,
+audio_ctrl = AudioController(buffer_capacity=10,
                              sample_rate=48000,
                              process_interval=0.001,
                              chunk_size=1920)
@@ -164,4 +164,4 @@ async def websocket_handler():
 if __name__ == "__main__":
     # 监听所有公网 IP
     app.run(host="0.0.0.0",
-            port=5000)
+            port=9002)
