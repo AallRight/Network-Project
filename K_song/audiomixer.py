@@ -30,7 +30,9 @@ class AudioMixer:
             self.reverb_queue.append(
                 np.zeros((1, chunk_size), dtype=np.float32))
 
-    def mix_frames(self, audio_data_list: list[np.ndarray]) -> np.ndarray:
+    def mix_frames(self,
+                   audio_data_list: list[np.ndarray],
+                   if_reverb: bool = False) -> np.ndarray:
         """
         异步混合音频帧
         """
@@ -50,7 +52,9 @@ class AudioMixer:
         if mixed_audio.dtype != np.float32:
             mixed_audio = mixed_audio.astype(np.float32)
 
-        mixed_audio = self.reverb(mixed_audio)
+        # 混响处理
+        if if_reverb:
+            mixed_audio = self.reverb(mixed_audio)
 
         return mixed_audio
 

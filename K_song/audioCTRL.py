@@ -98,6 +98,7 @@ class AudioController:
         self.is_music_playing = False
         self.is_microphone_recording = False
         self.if_denoise = True
+        self.if_reverb = True
 
         # 初始化音频控制器相关线程
         self.play_thread = None
@@ -149,7 +150,9 @@ class AudioController:
                 mixed_chunks.append(
                     np.zeros((1, self.chunk_size), dtype=np.float32))
 
-            mixed_audio = self.mixer.mix_frames(mixed_chunks)
+            # mix audio
+            mixed_audio = self.mixer.mix_frames(mixed_chunks,
+                                                if_reverb=self.if_reverb)
 
             if mixed_audio is not None:
                 self.player.play_frame(
@@ -273,3 +276,13 @@ class AudioController:
                 break
 
         logging.info("麦克风音频处理已停止")
+
+    # * 其他设置内容
+
+    async def if_denoise(self, if_denoise):
+        self.if_denoise = if_denoise
+        logging.info(f"降噪处理已设置为 {if_denoise}")
+
+    async def if_reverb(self, if_reverb):
+        self.if_reverb = if_reverb
+        logging.info(f"混响处理已设置为 {if_reverb}")
