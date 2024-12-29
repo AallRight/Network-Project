@@ -31,7 +31,7 @@ async def static_files(filename):
 
 
 # * 使用 websocket 和 AudioCTRL 进程间通信
-url_ctrl = "wss://172.20.10.3:9002/audio_ctrl"
+url_ctrl = "wss://10.180.250.50:9000/audio_ctrl"
 ssl_context = ssl._create_unverified_context()
 
 
@@ -115,4 +115,4 @@ async def close_mic():
 if __name__ == '__main__':
     # 监听所有公网 IP
     app.run(host="0.0.0.0",
-            port=9003)
+            port=5000)

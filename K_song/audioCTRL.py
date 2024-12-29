@@ -4,6 +4,7 @@ import wave
 from audiomixer import AudioMixer
 from audioplayer import AudioPlayer
 from audiorecorder import AudioRecorder
+import noisereduce as nr
 import aiofiles
 import logging
 import threading
@@ -66,7 +67,8 @@ class AudioController:
         self.process_interval = process_interval
 
         # 初始化音频混合器
-        self.mixer = AudioMixer(sample_rate=sample_rate, channels=channels)
+        self.mixer = AudioMixer(sample_rate=sample_rate,
+                                channels=channels, chunk_size=chunk_size)
 
         # 初始化音频播放器
         self.player = AudioPlayer(sample_rate=sample_rate, channels=channels)
@@ -95,6 +97,7 @@ class AudioController:
         self.is_loading_audio = False
         self.is_music_playing = False
         self.is_microphone_recording = False
+        self.if_denoise = True
 
         # 初始化音频控制器相关线程
         self.play_thread = None
@@ -129,17 +132,22 @@ class AudioController:
         while self.is_running:
             mixed_chunks = []
 
+            # human voice
             if self.audio_buffers:
                 mixed_chunks = await asyncio.gather(
                     *[self.audio_buffers[buffer_id].get() for buffer_id in self.audio_buffers if not self.audio_buffers[buffer_id].empty()]
                 )
 
+            # local music
             if self.is_running and self.is_music_playing and self.is_loading_audio and self.current_chunk_index < self.total_chunks:
                 self.current_chunk_index += 1
                 mixed_chunks.append(
                     self.local_audio.audio_data[self.current_chunk_index] *
                     self.music_volume / self.microphone_volume
                 )
+            else:
+                mixed_chunks.append(
+                    np.zeros((1, self.chunk_size), dtype=np.float32))
 
             mixed_audio = self.mixer.mix_frames(mixed_chunks)
 
@@ -250,6 +258,11 @@ class AudioController:
         while self.is_microphone_recording and self.is_running:
             try:
                 audio_frame = await self.recorder.record_frame()
+
+                # 降噪处理
+                if self.if_denoise:
+                    audio_frame = nr.reduce_noise(
+                        audio_frame, sr=self.sample_rate)
 
                 if self.audio_buffers[self.microphone_id].full():
                     await self.audio_buffers[self.microphone_id].get()
