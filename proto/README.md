@@ -8,6 +8,10 @@ protoc --pyi_out=. message.proto
 mv message_pb2.pyi message.pyi
 mv message_pb2.py message.py
 cp message.proto ../static/message.proto
+protoc --python_out=. backend_message.proto
+protoc --pyi_out=. backend_message.proto
+mv backend_message_pb2.pyi backend_message.pyi
+mv backend_message_pb2.py backend_message.py
 ```
 
 ## 说明

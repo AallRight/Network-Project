@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+message AudioServerCommand {
+    oneof command {
+        LoadMusicFile load_music_file = 1;
+        PlayMusic play_music = 2;
+        PauseMusic pause_music = 3;
+        AdjustPlaybackTime adjust_playback_time = 4;
+        BackendAdjustVolume adjust_volume = 5;
+        StartMicrophoneRecording start_microphone_recording = 6;
+        StopMicrophoneRecording stop_microphone_recording = 7;
+    }
+}
+
+message LoadMusicFile {
+    string file_path = 1;
+}
+
+message PlayMusic {
+
+}
+
+message PauseMusic {
+
+}
+
+message AdjustPlaybackTime {
+    int64 time_offset = 1;
+}
+
+message BackendAdjustVolume {
+    int64 volume_delta = 1;
+    bool is_microphone = 2;
+}
+
+message StartMicrophoneRecording {
+
+}
+
+message StopMicrophoneRecording {
+
+}

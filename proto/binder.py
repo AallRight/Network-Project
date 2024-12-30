@@ -31,3 +31,17 @@ class HandlerBinder:
         except Exception as e:
             raise Exception(f"Missing arg. (got {args}, excepted {params})") from e
         return handler(**kwargs)
+    
+    async def async_handle(self, message):
+        operation = message.WhichOneof(self.oneof_field)
+        try:
+            args = getattr(message, operation)
+        except Exception as e:
+            raise Exception(f"Missing operation. (message: >>> {message} <<<)") from e
+        handler = self.operation_handlers[operation]
+        params = self.operation_params[operation]
+        try:
+            kwargs = {param: getattr(args, param) for param in params}
+        except Exception as e:
+            raise Exception(f"Missing arg. (got {args}, excepted {params})") from e
+        return await handler(**kwargs)

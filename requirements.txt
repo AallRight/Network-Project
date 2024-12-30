@@ -3,3 +3,12 @@ flask_socketio
 mutagen
 pygame
 protobuf==3.20.3
+numpy
+quart
+quart_cors
+aiortc
+hypercorn
+websockets
+pydub
+noisereduce
+pyaudio
