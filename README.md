@@ -2,7 +2,7 @@
 
 ## Architecture
 
-![](ksong-arch.drawio.png) 
+![](ksong-arch.png) 
 
 ## Usage
 
