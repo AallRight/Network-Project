@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+        audio {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Player</h1>
+    <audio id="audio" controls></audio>
+    <script>
+
+const audioElement = document.getElementById('audio');
+const audioContext = new AudioContext();
+
+
+const address = window.location.host;
+
+const sio = io(address, {
+    cors: {
+        origin: address
+    }
+});
+
+sio.on('connect', () => {
+    sio.emit("join", "players");
+});
+
+sio.on('media', (data) => {
+    console.log('Receiving data: ', data);
+    const blob = new Blob([data], { type: 'audio/ogg;codecs=opus' });
+    const url = URL.createObjectURL(blob);
+    audioElement.src = url;
+    audioElement.play().catch(error => {
+        console.error("Failed to playback: ", error);
+    })
+});
+
+sio.on('disconnect', () => {
+    console.log('Disconnected from server.');
+});
+
+    </script>
+</body>
+</html>
