@@ -11,7 +11,7 @@ class AudioBackend:
     def __init__(
         self,
         play_next_callback: Callable[[], None],
-        audio_server_host: str = "0.0.0.0:5000",
+        audio_server_url: str = "http://0.0.0.0:5000/audio_ctrl",
     ):
         self.song_path: Optional[str] = None
         self.track_length: Optional[float] = None
@@ -25,7 +25,7 @@ class AudioBackend:
         self.stop_event = threading.Event()
         self.audio_backend_loop = None
 
-        self.audio_server_host = audio_server_host
+        self.audio_server_url = audio_server_url
 
     def play(self, song_path: str, at_time: int, track_length: float) -> int:
         if self.song_path:
@@ -93,8 +93,14 @@ class AudioBackend:
         )
 
     def __send_to_audio_server(self, command: AudioServerCommand):
-        url = f"http://{self.audio_server_host}/audio_ctrl"
-        return requests.post(url, data=command.SerializeToString())
+        try:
+            response = requests.post(self.audio_server_url, data=command.SerializeToString())
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as http_err:
+            raise Exception(f"Audio server HTTP error: {http_err}") from http_err
+        except requests.exceptions.RequestException as req_err:
+            raise Exception(f"Audio backend request error: {req_err}") from req_err
+
 
     def __start_audio_backend_loop(self):
         self.stop_event.clear()

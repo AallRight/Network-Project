@@ -8,7 +8,7 @@
 
 ```bash
 pip install -r requirements.txt
-python server/main.py 5001 /path/to/db /path/to/music &
+python server/main.py 5001 /path/to/db /path/to/music "http://0.0.0.0:5000/audio_ctrl" &
 hypercorn audio_server/signaling:app --bind 0.0.0.0:5000
 ```
 

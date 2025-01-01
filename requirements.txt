@@ -12,3 +12,5 @@ websockets
 pydub
 noisereduce
 pyaudio
+librosa
+eventlet

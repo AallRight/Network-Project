@@ -17,11 +17,11 @@ from server.constant import *
 from server.builders import make_uplink_message_play_next
 
 class Controller:
-    def __init__(self, socketio: SocketIO, users_manager: "UsersManager", db_path: str, music_path: str):
+    def __init__(self, socketio: SocketIO, users_manager: "UsersManager", db_path: str, music_path: str, audio_server_url: str):
         waitlist = Waitlist(db_path)
         mlibrary = MLibrary(db_path, music_path)
         active_song = ActiveSong()
-        audio_backend = AudioBackend(lambda: self.put_uplink_message(make_uplink_message_play_next()))
+        audio_backend = AudioBackend(lambda: self.put_uplink_message(make_uplink_message_play_next()), audio_server_url)
 
         self.command_service = CommandService(mlibrary, waitlist, active_song, audio_backend)
         self.query_service = QueryService(mlibrary, waitlist, active_song)
