@@ -32,25 +32,8 @@ audio_ctrl = AudioController(buffer_capacity=5,
                              process_interval=0.001,
                              chunk_size=1920)
 
-
-# 设置静态文件路径
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-app.static_folder = os.path.join(BASE_DIR, "static")
-
 # 配置日志
 logging.basicConfig(level=logging.INFO)
-
-
-@app.route("/")
-async def index():
-    # 返回 index.html
-    return await send_from_directory(app.static_folder,
-                                     "index.html")
-
-
-@app.route('/<path:filename>')
-async def static_files(filename):
-    return await send_from_directory(app.static_folder, filename)
 
 
 @app.before_serving
@@ -60,7 +43,6 @@ async def initial_device():
     audio_ctrl.create_microphone_thread()
 
     await audio_ctrl.start_audio_playback()
-    await audio_ctrl.load_music_file("/home/samuel/Projects/KSong/Network-Project-illusionary/K_song/music/时暮的思眷.wav")
 
 
 @app.route("/offer", methods=["POST"])
@@ -125,6 +107,7 @@ async def audio_control():
     audio_server_command = AudioServerCommand()
     try:
         audio_server_command.ParseFromString(command_bytes)
+        print(audio_server_command)
         await audio_ctrl.execute(audio_server_command)
         logging.info(f"成功执行客户端命令: {audio_server_command}")
         return jsonify({"status": "success"})

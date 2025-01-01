@@ -34,7 +34,9 @@ class AudioBackend:
             self.__send_to_audio_server(
                 AudioServerCommand(load_music_file=LoadMusicFile(file_path=song_path))
             )
-        self.__send_to_audio_server(AudioServerCommand(play_music=PlayMusic()))
+        self.__send_to_audio_server(
+                AudioServerCommand(play_music=PlayMusic(at_time=at_time))
+            )
 
         self.song_path = song_path
         self.track_length = track_length

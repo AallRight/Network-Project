@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rmessage.proto\"{\n\rUplinkMessage\x12\x0f\n\x07user_id\x18\x01 \x01(\x03\x12(\n\x0e\x63lient_command\x18\x02 \x01(\x0b\x32\x0e.ClientCommandH\x00\x12$\n\x0c\x63lient_query\x18\x03 \x01(\x0b\x32\x0c.ClientQueryH\x00\x42\t\n\x07payload\"\xce\x01\n\x0f\x44ownlinkMessage\x12\x17\n\ncommand_id\x18\x01 \x01(\x03H\x01\x88\x01\x01\x12\"\n\x08waitlist\x18\x02 \x01(\x0b\x32\x0e.WaitlistProtoH\x00\x12\'\n\x0b\x61\x63tive_song\x18\x03 \x01(\x0b\x32\x10.ActiveSongProtoH\x00\x12\"\n\x08mlibrary\x18\x04 \x01(\x0b\x32\x0e.MLibraryProtoH\x00\x12\x17\n\x05\x65rror\x18\x05 \x01(\x0b\x32\x06.ErrorH\x00\x42\t\n\x07payloadB\r\n\x0b_command_id\"\xb7\x02\n\rClientCommand\x12\x12\n\ncommand_id\x18\x01 \x01(\x03\x12$\n\x0cwaitlist_add\x18\x03 \x01(\x0b\x32\x0c.WaitlistAddH\x00\x12&\n\rwaitlist_move\x18\x04 \x01(\x0b\x32\r.WaitlistMoveH\x00\x12*\n\x0fwaitlist_delete\x18\x05 \x01(\x0b\x32\x0f.WaitlistDeleteH\x00\x12\x15\n\x04play\x18\x06 \x01(\x0b\x32\x05.PlayH\x00\x12\x17\n\x05pause\x18\x07 \x01(\x0b\x32\x06.PauseH\x00\x12\x15\n\x04jump\x18\x08 \x01(\x0b\x32\x05.JumpH\x00\x12&\n\radjust_volume\x18\t \x01(\x0b\x32\r.AdjustVolumeH\x00\x12\x1e\n\tplay_next\x18\n \x01(\x0b\x32\t.PlayNextH\x00\x42\t\n\x07\x63ommand\"\x8d\x01\n\x0b\x43lientQuery\x12$\n\x0cget_waitlist\x18\x02 \x01(\x0b\x32\x0c.GetWaitlistH\x00\x12$\n\x0cget_mlibrary\x18\x03 \x01(\x0b\x32\x0c.GetMLibraryH\x00\x12)\n\x0fget_active_song\x18\x04 \x01(\x0b\x32\x0e.GetActiveSongH\x00\x42\x07\n\x05query\"\x1a\n\x0bWaitlistAdd\x12\x0b\n\x03sid\x18\x01 \x01(\x03\"+\n\x0cWaitlistMove\x12\x0b\n\x03wid\x18\x01 \x01(\x03\x12\x0e\n\x06offset\x18\x02 \x01(\x03\"\x1d\n\x0eWaitlistDelete\x12\x0b\n\x03wid\x18\x01 \x01(\x03\"!\n\x04Play\x12\x0b\n\x03sid\x18\x01 \x01(\x03\x12\x0c\n\x04time\x18\x02 \x01(\x03\"\x07\n\x05Pause\"\x14\n\x04Jump\x12\x0c\n\x04time\x18\x01 \x01(\x03\"\x1e\n\x0c\x41\x64justVolume\x12\x0e\n\x06volume\x18\x01 \x01(\x03\"\n\n\x08PlayNext\"\r\n\x0bGetWaitlist\"\x1b\n\x0bGetMLibrary\x12\x0c\n\x04page\x18\x01 \x01(\x03\"\x0f\n\rGetActiveSong\"\x1e\n\rWaitlistProto\x12\r\n\x05songs\x18\x01 \x03(\t\";\n\rMLibraryProto\x12\x0c\n\x04page\x18\x01 \x01(\x03\x12\r\n\x05\x63ount\x18\x02 \x01(\x03\x12\r\n\x05songs\x18\x03 \x03(\t\"&\n\x0f\x41\x63tiveSongProto\x12\x13\n\x0b\x61\x63tive_song\x18\x01 \x01(\t\"\x16\n\x05\x45rror\x12\r\n\x05\x65rror\x18\x01 \x01(\tb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rmessage.proto\"{\n\rUplinkMessage\x12\x0f\n\x07user_id\x18\x01 \x01(\x03\x12(\n\x0e\x63lient_command\x18\x02 \x01(\x0b\x32\x0e.ClientCommandH\x00\x12$\n\x0c\x63lient_query\x18\x03 \x01(\x0b\x32\x0c.ClientQueryH\x00\x42\t\n\x07payload\"\xba\x01\n\x0f\x44ownlinkMessage\x12\x12\n\ncommand_id\x18\x01 \x01(\x03\x12\"\n\x08waitlist\x18\x02 \x01(\x0b\x32\x0e.WaitlistProtoH\x00\x12\'\n\x0b\x61\x63tive_song\x18\x03 \x01(\x0b\x32\x10.ActiveSongProtoH\x00\x12\"\n\x08mlibrary\x18\x04 \x01(\x0b\x32\x0e.MLibraryProtoH\x00\x12\x17\n\x05\x65rror\x18\x05 \x01(\x0b\x32\x06.ErrorH\x00\x42\t\n\x07payload\"\xb7\x02\n\rClientCommand\x12\x12\n\ncommand_id\x18\x01 \x01(\x03\x12$\n\x0cwaitlist_add\x18\x03 \x01(\x0b\x32\x0c.WaitlistAddH\x00\x12&\n\rwaitlist_move\x18\x04 \x01(\x0b\x32\r.WaitlistMoveH\x00\x12*\n\x0fwaitlist_delete\x18\x05 \x01(\x0b\x32\x0f.WaitlistDeleteH\x00\x12\x15\n\x04play\x18\x06 \x01(\x0b\x32\x05.PlayH\x00\x12\x17\n\x05pause\x18\x07 \x01(\x0b\x32\x06.PauseH\x00\x12\x15\n\x04jump\x18\x08 \x01(\x0b\x32\x05.JumpH\x00\x12&\n\radjust_volume\x18\t \x01(\x0b\x32\r.AdjustVolumeH\x00\x12\x1e\n\tplay_next\x18\n \x01(\x0b\x32\t.PlayNextH\x00\x42\t\n\x07\x63ommand\"\x8d\x01\n\x0b\x43lientQuery\x12$\n\x0cget_waitlist\x18\x02 \x01(\x0b\x32\x0c.GetWaitlistH\x00\x12$\n\x0cget_mlibrary\x18\x03 \x01(\x0b\x32\x0c.GetMLibraryH\x00\x12)\n\x0fget_active_song\x18\x04 \x01(\x0b\x32\x0e.GetActiveSongH\x00\x42\x07\n\x05query\"\x1a\n\x0bWaitlistAdd\x12\x0b\n\x03sid\x18\x01 \x01(\x03\"+\n\x0cWaitlistMove\x12\x0b\n\x03wid\x18\x01 \x01(\x03\x12\x0e\n\x06offset\x18\x02 \x01(\x03\"\x1d\n\x0eWaitlistDelete\x12\x0b\n\x03wid\x18\x01 \x01(\x03\"!\n\x04Play\x12\x0b\n\x03sid\x18\x01 \x01(\x03\x12\x0c\n\x04time\x18\x02 \x01(\x03\"\x07\n\x05Pause\"\x14\n\x04Jump\x12\x0c\n\x04time\x18\x01 \x01(\x03\"\x1e\n\x0c\x41\x64justVolume\x12\x0e\n\x06volume\x18\x01 \x01(\x03\"\n\n\x08PlayNext\"\r\n\x0bGetWaitlist\"\x1b\n\x0bGetMLibrary\x12\x0c\n\x04page\x18\x01 \x01(\x03\"\x0f\n\rGetActiveSong\"\x1e\n\rWaitlistProto\x12\r\n\x05songs\x18\x01 \x03(\t\";\n\rMLibraryProto\x12\x0c\n\x04page\x18\x01 \x01(\x03\x12\r\n\x05\x63ount\x18\x02 \x01(\x03\x12\r\n\x05songs\x18\x03 \x03(\t\"&\n\x0f\x41\x63tiveSongProto\x12\x13\n\x0b\x61\x63tive_song\x18\x01 \x01(\t\"\x16\n\x05\x45rror\x12\r\n\x05\x65rror\x18\x01 \x01(\tb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'message_pb2', globals())
@@ -23,39 +23,39 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _UPLINKMESSAGE._serialized_start=17
   _UPLINKMESSAGE._serialized_end=140
   _DOWNLINKMESSAGE._serialized_start=143
-  _DOWNLINKMESSAGE._serialized_end=349
-  _CLIENTCOMMAND._serialized_start=352
-  _CLIENTCOMMAND._serialized_end=663
-  _CLIENTQUERY._serialized_start=666
-  _CLIENTQUERY._serialized_end=807
-  _WAITLISTADD._serialized_start=809
-  _WAITLISTADD._serialized_end=835
-  _WAITLISTMOVE._serialized_start=837
-  _WAITLISTMOVE._serialized_end=880
-  _WAITLISTDELETE._serialized_start=882
-  _WAITLISTDELETE._serialized_end=911
-  _PLAY._serialized_start=913
-  _PLAY._serialized_end=946
-  _PAUSE._serialized_start=948
-  _PAUSE._serialized_end=955
-  _JUMP._serialized_start=957
-  _JUMP._serialized_end=977
-  _ADJUSTVOLUME._serialized_start=979
-  _ADJUSTVOLUME._serialized_end=1009
-  _PLAYNEXT._serialized_start=1011
-  _PLAYNEXT._serialized_end=1021
-  _GETWAITLIST._serialized_start=1023
-  _GETWAITLIST._serialized_end=1036
-  _GETMLIBRARY._serialized_start=1038
-  _GETMLIBRARY._serialized_end=1065
-  _GETACTIVESONG._serialized_start=1067
-  _GETACTIVESONG._serialized_end=1082
-  _WAITLISTPROTO._serialized_start=1084
-  _WAITLISTPROTO._serialized_end=1114
-  _MLIBRARYPROTO._serialized_start=1116
-  _MLIBRARYPROTO._serialized_end=1175
-  _ACTIVESONGPROTO._serialized_start=1177
-  _ACTIVESONGPROTO._serialized_end=1215
-  _ERROR._serialized_start=1217
-  _ERROR._serialized_end=1239
+  _DOWNLINKMESSAGE._serialized_end=329
+  _CLIENTCOMMAND._serialized_start=332
+  _CLIENTCOMMAND._serialized_end=643
+  _CLIENTQUERY._serialized_start=646
+  _CLIENTQUERY._serialized_end=787
+  _WAITLISTADD._serialized_start=789
+  _WAITLISTADD._serialized_end=815
+  _WAITLISTMOVE._serialized_start=817
+  _WAITLISTMOVE._serialized_end=860
+  _WAITLISTDELETE._serialized_start=862
+  _WAITLISTDELETE._serialized_end=891
+  _PLAY._serialized_start=893
+  _PLAY._serialized_end=926
+  _PAUSE._serialized_start=928
+  _PAUSE._serialized_end=935
+  _JUMP._serialized_start=937
+  _JUMP._serialized_end=957
+  _ADJUSTVOLUME._serialized_start=959
+  _ADJUSTVOLUME._serialized_end=989
+  _PLAYNEXT._serialized_start=991
+  _PLAYNEXT._serialized_end=1001
+  _GETWAITLIST._serialized_start=1003
+  _GETWAITLIST._serialized_end=1016
+  _GETMLIBRARY._serialized_start=1018
+  _GETMLIBRARY._serialized_end=1045
+  _GETACTIVESONG._serialized_start=1047
+  _GETACTIVESONG._serialized_end=1062
+  _WAITLISTPROTO._serialized_start=1064
+  _WAITLISTPROTO._serialized_end=1094
+  _MLIBRARYPROTO._serialized_start=1096
+  _MLIBRARYPROTO._serialized_end=1155
+  _ACTIVESONGPROTO._serialized_start=1157
+  _ACTIVESONGPROTO._serialized_end=1195
+  _ERROR._serialized_start=1197
+  _ERROR._serialized_end=1219
 # @@protoc_insertion_point(module_scope)
