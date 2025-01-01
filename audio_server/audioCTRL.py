@@ -128,7 +128,6 @@ class AudioController:
 
     # * 音频控制器相关方法
     async def _play_audio_stream(self):
-        count = 0
         while self.is_running:
             mixed_chunks = []
 
@@ -158,7 +157,6 @@ class AudioController:
                     (mixed_audio * self.microphone_volume))
             else:
                 await asyncio.sleep(self.process_interval / 10)
-            count += 1
 
     async def start_audio_playback(self):
         self.is_running = True
@@ -179,11 +177,12 @@ class AudioController:
         self.is_loading_audio = True
         self.current_chunk_index = 0
 
-    async def play_music(self):
+    async def play_music(self, at_time):
         if not self.is_loading_audio:
             logging.info("未加载任何音频文件")
             return
-        self.current_chunk_index = 0
+        self.current_chunk_index = int(
+            (at_time/1000) * self.sample_rate * self.channels / self.chunk_size)
         self.is_music_playing = True
 
     async def pause_music(self):

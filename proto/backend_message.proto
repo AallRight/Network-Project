@@ -17,7 +17,7 @@ message LoadMusicFile {
 }
 
 message PlayMusic {
-
+    int64 at_time = 1;
 }
 
 message PauseMusic {

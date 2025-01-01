@@ -47,8 +47,10 @@ class PauseMusic(_message.Message):
     def __init__(self) -> None: ...
 
 class PlayMusic(_message.Message):
-    __slots__ = []
-    def __init__(self) -> None: ...
+    __slots__ = ["at_time"]
+    AT_TIME_FIELD_NUMBER: ClassVar[int]
+    at_time: int
+    def __init__(self, at_time: Optional[int] = ...) -> None: ...
 
 class StartMicrophoneRecording(_message.Message):
     __slots__ = []
