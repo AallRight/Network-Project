@@ -27,26 +27,34 @@ class LocalAudio:
         self.audio_data = None
         self.total_chunks = 0
 
-    def load_audio_file(self, file_path):
-        """
-        异步加载本地音频文件
-        """
-        audio, sr = librosa.load(file_path, sr=self.sample_rate, mono=True, dtype=np.float32)
-        num_chunks = (len(audio) + self.chunk_size - 1) // self.chunk_size
-        padded_audio = np.zeros(num_chunks * self.chunk_size, dtype=np.float32)
+    def __chunk(self, audio: np.ndarray, chunk_size=960):
+        num_chunks = (len(audio) + chunk_size - 1) // chunk_size
+        padded_audio = np.zeros(num_chunks * chunk_size, dtype=np.float32)
         padded_audio[:len(audio)] = audio
-        chunked_audio = padded_audio.reshape((num_chunks, 1, self.chunk_size))
+        chunked_audio = padded_audio.reshape((num_chunks, 1, chunk_size))
 
-        decay_length = len(audio) - (num_chunks - 1) * self.chunk_size
+        decay_length = len(audio) - (num_chunks - 1) * chunk_size
         decay = np.linspace(1, 0, decay_length, dtype=np.float32)
         chunked_audio[-1, 0, :decay_length] *= decay
+        return chunked_audio, num_chunks
 
-        self.audio_data = chunked_audio
-        self.total_chunks = num_chunks
+    def load_audio_file(self, file_path):
+        if self.channels == 1:
+            audio, sr = librosa.load(file_path, mono=True, sr=self.sample_rate, dtype=np.float32)
+            self.audio_data, self.total_chunks = self.__chunk(audio, self.chunk_size)
+        elif self.channels == 2:
+            audio, sr = librosa.load(file_path, mono=False, sr=self.sample_rate, dtype=np.float32)
+            if audio.shape[0] == 2:
+                audio_data_0, num_chunks = self.__chunk(audio[0], self.chunk_size // 2)
+                audio_data_1, num_chunks = self.__chunk(audio[1], self.chunk_size // 2)
+                audio_data = np.empty((num_chunks, 1, self.chunk_size))
+                audio_data[..., 0::2] = audio_data_0
+                audio_data[..., 1::2] = audio_data_1
+                self.audio_data, self.total_chunks = audio_data, num_chunks
 
 
 class AudioController:
-    def __init__(self, sample_rate=48000, channels=1, buffer_capacity=1, chunk_size=1920, process_interval=0.001):
+    def __init__(self, sample_rate=48000, channels=2, buffer_capacity=1, chunk_size=1920, process_interval=0.001):
         """
         音频控制器模块
         """
@@ -90,7 +98,7 @@ class AudioController:
         self.is_music_playing = False
         self.is_microphone_recording = False
         self.if_denoise = True
-        self.if_reverb = True
+        self.if_reverb = False
 
         # 初始化音频控制器相关线程
         self.play_thread = None
