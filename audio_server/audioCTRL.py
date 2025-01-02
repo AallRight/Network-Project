@@ -56,7 +56,7 @@ class LocalAudio:
 
 
 class AudioController:
-    def __init__(self, sample_rate=48000, channels=2, buffer_capacity=5, chunk_size=1920, process_interval=0.001):
+    def __init__(self, sample_rate=48000, channels=2, buffer_capacity=5, chunk_size=1920, process_interval=0.0001):
         """
         音频控制器模块
         """
@@ -174,9 +174,9 @@ class AudioController:
                         (mixed_audio * self.microphone_volume))
                     if len(indices) > 0 and self.print_time:
                         print("consumer play", indices, time.time())
-                    await asyncio.sleep(self.process_interval / 10)
+                    await asyncio.sleep(self.process_interval)
                 else:
-                    await asyncio.sleep(self.process_interval / 10)
+                    await asyncio.sleep(self.process_interval)
         except Exception as e:
             traceback.print_exc()
 
@@ -270,7 +270,7 @@ class AudioController:
                     print("producer drop", idx, time.time())
                 await self.audio_buffers[connection_id].put((audio_data, idx))
                 print("producer put", idx, time.time())
-                await asyncio.sleep(self.process_interval / 10)
+                await asyncio.sleep(self.process_interval)
                 idx += 1
             except Exception as e:
                 self.audio_buffers.pop(connection_id, None)
@@ -281,6 +281,7 @@ class AudioController:
 
     # * 麦克风音频处理相关方法
     async def _process_microphone_audio(self):
+        idx = 0
         while self.is_microphone_recording and self.is_running:
             try:
                 audio_frame = await self.recorder.record_frame()
@@ -293,8 +294,9 @@ class AudioController:
                 if self.audio_buffers[self.microphone_id].full():
                     await self.audio_buffers[self.microphone_id].get()
 
-                await self.audio_buffers[self.microphone_id].put(audio_frame)
+                await self.audio_buffers[self.microphone_id].put((audio_frame, idx))
                 await asyncio.sleep(self.process_interval)
+                idx += 1
             except Exception as e:
                 break
 

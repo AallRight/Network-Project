@@ -236,6 +236,10 @@ function onPlayNextButtonClick() {
     control.sendCommand("playNext", {});
 }
 
+function onRecordingButtonClick() {
+    control.sendCommand("switchRecording", {});
+}
+
 function onVoiceButtonClick() {
     if (!model.voice) {
         if (media.startRecording())
@@ -328,6 +332,7 @@ function refresh() {
     document.getElementById("playnext-button").addEventListener("click", onPlayNextButtonClick);
     document.getElementById("play-button").addEventListener("click", onPlayButtonClick);
     document.getElementById("voice-button").addEventListener("click", onVoiceButtonClick);
+    document.getElementById("recording-button").addEventListener("click", onRecordingButtonClick);
 }
 
 async function main() {

@@ -27,6 +27,8 @@ class AudioBackend:
 
         self.audio_server_url = audio_server_url
 
+        self.recording = False
+
     def play(self, song_path: str, at_time: int, track_length: float) -> int:
         if self.song_path:
             self.__send_to_audio_server(AudioServerCommand(pause_music=PauseMusic()))
@@ -93,6 +95,22 @@ class AudioBackend:
                 )
             )
         )
+
+    def switch_recording(self):
+        if self.recording:
+            self.__send_to_audio_server(
+                AudioServerCommand(
+                    stop_microphone_recording=StopMicrophoneRecording()
+                )
+            )
+            self.recording = False
+        else:
+            self.__send_to_audio_server(
+                AudioServerCommand(
+                    start_microphone_recording=StartMicrophoneRecording()
+                )
+            )
+            self.recording = True
 
     def __send_to_audio_server(self, command: AudioServerCommand):
         try:

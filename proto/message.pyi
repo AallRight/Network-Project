@@ -18,13 +18,14 @@ class AdjustVolume(_message.Message):
     def __init__(self, volume: Optional[int] = ...) -> None: ...
 
 class ClientCommand(_message.Message):
-    __slots__ = ["adjust_volume", "command_id", "jump", "pause", "play", "play_next", "waitlist_add", "waitlist_delete", "waitlist_move"]
+    __slots__ = ["adjust_volume", "command_id", "jump", "pause", "play", "play_next", "switch_recording", "waitlist_add", "waitlist_delete", "waitlist_move"]
     ADJUST_VOLUME_FIELD_NUMBER: ClassVar[int]
     COMMAND_ID_FIELD_NUMBER: ClassVar[int]
     JUMP_FIELD_NUMBER: ClassVar[int]
     PAUSE_FIELD_NUMBER: ClassVar[int]
     PLAY_FIELD_NUMBER: ClassVar[int]
     PLAY_NEXT_FIELD_NUMBER: ClassVar[int]
+    SWITCH_RECORDING_FIELD_NUMBER: ClassVar[int]
     WAITLIST_ADD_FIELD_NUMBER: ClassVar[int]
     WAITLIST_DELETE_FIELD_NUMBER: ClassVar[int]
     WAITLIST_MOVE_FIELD_NUMBER: ClassVar[int]
@@ -34,10 +35,11 @@ class ClientCommand(_message.Message):
     pause: Pause
     play: Play
     play_next: PlayNext
+    switch_recording: SwitchRecording
     waitlist_add: WaitlistAdd
     waitlist_delete: WaitlistDelete
     waitlist_move: WaitlistMove
-    def __init__(self, command_id: Optional[int] = ..., waitlist_add: Optional[Union[WaitlistAdd, Mapping]] = ..., waitlist_move: Optional[Union[WaitlistMove, Mapping]] = ..., waitlist_delete: Optional[Union[WaitlistDelete, Mapping]] = ..., play: Optional[Union[Play, Mapping]] = ..., pause: Optional[Union[Pause, Mapping]] = ..., jump: Optional[Union[Jump, Mapping]] = ..., adjust_volume: Optional[Union[AdjustVolume, Mapping]] = ..., play_next: Optional[Union[PlayNext, Mapping]] = ...) -> None: ...
+    def __init__(self, command_id: Optional[int] = ..., waitlist_add: Optional[Union[WaitlistAdd, Mapping]] = ..., waitlist_move: Optional[Union[WaitlistMove, Mapping]] = ..., waitlist_delete: Optional[Union[WaitlistDelete, Mapping]] = ..., play: Optional[Union[Play, Mapping]] = ..., pause: Optional[Union[Pause, Mapping]] = ..., jump: Optional[Union[Jump, Mapping]] = ..., adjust_volume: Optional[Union[AdjustVolume, Mapping]] = ..., play_next: Optional[Union[PlayNext, Mapping]] = ..., switch_recording: Optional[Union[SwitchRecording, Mapping]] = ...) -> None: ...
 
 class ClientQuery(_message.Message):
     __slots__ = ["get_active_song", "get_mlibrary", "get_waitlist"]
@@ -112,6 +114,10 @@ class Play(_message.Message):
     def __init__(self, sid: Optional[int] = ..., time: Optional[int] = ...) -> None: ...
 
 class PlayNext(_message.Message):
+    __slots__ = []
+    def __init__(self) -> None: ...
+
+class SwitchRecording(_message.Message):
     __slots__ = []
     def __init__(self) -> None: ...
 
