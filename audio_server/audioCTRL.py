@@ -56,7 +56,7 @@ class LocalAudio:
 
 
 class AudioController:
-    def __init__(self, sample_rate=48000, channels=2, buffer_capacity=1, chunk_size=1920, process_interval=0.001):
+    def __init__(self, sample_rate=48000, channels=2, buffer_capacity=5, chunk_size=1920, process_interval=0.001):
         """
         音频控制器模块
         """
@@ -173,7 +173,8 @@ class AudioController:
                     self.player.play_frame(
                         (mixed_audio * self.microphone_volume))
                     if len(indices) > 0 and self.print_time:
-                        print(indices, time.time())
+                        print("consumer play", indices, time.time())
+                    await asyncio.sleep(self.process_interval / 10)
                 else:
                     await asyncio.sleep(self.process_interval / 10)
         except Exception as e:
@@ -181,8 +182,8 @@ class AudioController:
 
     async def start_audio_playback(self):
         self.is_running = True
-        asyncio.run_coroutine_threadsafe(
-            self._play_audio_stream(), self.play_event_loop)
+        asyncio.create_task(
+            self._play_audio_stream())
         logging.info("音频播放已启动")
 
     async def stop_audio_playback(self):
@@ -242,8 +243,8 @@ class AudioController:
             maxsize=self.buffer_capacity)
         logging.info("已创建麦克风音频缓冲区")
 
-        asyncio.run_coroutine_threadsafe(
-            self._process_microphone_audio(), self.microphone_event_loop)
+        asyncio.create_task(
+            self._process_microphone_audio())
         logging.info("麦克风录音已启动")
 
         self.is_microphone_recording = True
@@ -265,13 +266,11 @@ class AudioController:
                 frame = await track.recv()
                 audio_data = frame.to_ndarray()
                 if self.audio_buffers[connection_id].full():
-                    self.audio_buffers[connection_id].get()
-                    if self.print_time:
-                        print(idx, "drop")
+                    await self.audio_buffers[connection_id].get()
+                    print("producer drop", idx, time.time())
                 await self.audio_buffers[connection_id].put((audio_data, idx))
-                if self.print_time:
-                    print(idx, time.time())
-                await asyncio.sleep(self.process_interval)
+                print("producer put", idx, time.time())
+                await asyncio.sleep(self.process_interval / 10)
                 idx += 1
             except Exception as e:
                 self.audio_buffers.pop(connection_id, None)
