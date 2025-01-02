@@ -1,4 +1,5 @@
 import eventlet
+
 eventlet.monkey_patch()
 
 from flask import Flask, render_template, request
@@ -29,7 +30,7 @@ def handle_connect():
     user_id = users_manager.allocate(request.sid)
     socketio.emit("user_id", {"user_id": user_id}, to=request.sid)
     app.logger.info(f"Client connected. {request.sid} {user_id}")
-
+    
 
 @socketio.on("disconnect")
 def handle_disconnect():
