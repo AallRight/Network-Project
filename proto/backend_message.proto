@@ -29,7 +29,7 @@ message AdjustPlaybackTime {
 }
 
 message BackendAdjustVolume {
-    int64 volume_delta = 1;
+    float volume_delta = 1;
     bool is_microphone = 2;
 }
 

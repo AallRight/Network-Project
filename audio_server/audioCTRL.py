@@ -56,7 +56,7 @@ class LocalAudio:
 
 
 class AudioController:
-    def __init__(self, sample_rate=48000, channels=2, buffer_capacity=5, chunk_size=1920, process_interval=0.0001):
+    def __init__(self, sample_rate=48000, channels=2, buffer_capacity=5, chunk_size=1920, process_interval=0.001):
         """
         音频控制器模块
         """
@@ -109,7 +109,7 @@ class AudioController:
         self.microphone_thread = None
         self.microphone_event_loop = None
 
-        self.print_time = True # 调试用
+        self.print_time = False # 调试用
 
     async def execute(self, audio_server_command: AudioServerCommand):
         try:
@@ -174,7 +174,7 @@ class AudioController:
                         (mixed_audio * self.microphone_volume))
                     if len(indices) > 0 and self.print_time:
                         print("consumer play", indices, time.time())
-                    await asyncio.sleep(self.process_interval / 10)
+                    await asyncio.sleep(self.process_interval / 20)
                 else:
                     await asyncio.sleep(self.process_interval / 10)
         except Exception as e:
@@ -182,8 +182,8 @@ class AudioController:
 
     async def start_audio_playback(self):
         self.is_running = True
-        asyncio.create_task(
-            self._play_audio_stream())
+        asyncio.run_coroutine_threadsafe(
+            self._play_audio_stream(), self.play_event_loop)
         logging.info("音频播放已启动")
 
     async def stop_audio_playback(self):

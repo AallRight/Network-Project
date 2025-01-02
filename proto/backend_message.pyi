@@ -33,8 +33,8 @@ class BackendAdjustVolume(_message.Message):
     IS_MICROPHONE_FIELD_NUMBER: ClassVar[int]
     VOLUME_DELTA_FIELD_NUMBER: ClassVar[int]
     is_microphone: bool
-    volume_delta: int
-    def __init__(self, volume_delta: Optional[int] = ..., is_microphone: bool = ...) -> None: ...
+    volume_delta: float
+    def __init__(self, volume_delta: Optional[float] = ..., is_microphone: bool = ...) -> None: ...
 
 class LoadMusicFile(_message.Message):
     __slots__ = ["file_path"]

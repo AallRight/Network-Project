@@ -1,6 +1,5 @@
 const media = {
-    SERVER_IP: "127.0.0.1", // Replace with the server address
-    RTC_PORT: 5000, // RTC server port
+    audioServerURL: "http://127.0.0.1:5000",
 
     peerConnection: null, // RTCPeerConnection instance
     localStream: null, // Local audio stream
@@ -8,7 +7,7 @@ const media = {
 
     // Utility function: Send data to the RTC server
     async _sendToRTC(endpoint, data) {
-        const url = `http://${this.SERVER_IP}:${this.RTC_PORT}/${endpoint}`;
+        const url = `${this.audioServerURL}/${endpoint}`;
         try {
             const response = await fetch(url, {
                 method: "POST",

@@ -4,6 +4,7 @@ eventlet.monkey_patch()
 
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, join_room
+from urllib.parse import urljoin
 
 from typing import *
 import argparse
@@ -23,6 +24,8 @@ app.config["SECRET_KEY"] = "secret!"
 socketio = SocketIO(app, async_model='eventlet')
 users_manager = UsersManager()
 controller: Optional[Controller] = None
+
+audio_server_url = ""
 
 
 @socketio.on("connect")
@@ -52,7 +55,7 @@ def handle_uplink_message(message):
 
 @app.route("/")
 def index():
-    return render_template("test.html")
+    return render_template("test.html", audio_server_url=audio_server_url)
 
 
 if __name__ == "__main__":
@@ -63,11 +66,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "audio_server_url",
         type=str,
-        help="Audio Server URL (e.g. http://0.0.0.0:5000/audio_ctrl)",
+        help="Audio Server URL (e.g. http://0.0.0.0:5000)",
     )
     args = parser.parse_args()
 
-    controller = Controller(socketio, users_manager, args.db, args.music, args.audio_server_url)
+    audio_server_url = args.audio_server_url
+    controller = Controller(socketio, users_manager, args.db, args.music, urljoin(args.audio_server_url, "/audio_ctrl"))
     controller.start()
+
 
     socketio.run(app, host="0.0.0.0", port=args.port)

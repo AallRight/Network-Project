@@ -80,21 +80,21 @@ class AudioBackend:
         self.__send_to_audio_server(
             AudioServerCommand(
                 adjust_volume=BackendAdjustVolume(
-                    volume_delta=(volume - self.mic_volume) / 100, is_microphone=True
+                    volume_delta=(volume - self.mic_volume) / 100.0, is_microphone=True
                 )
             )
         )
         self.mic_volume = volume
 
     def set_volume(self, volume: int):
-        self.music_volume = max(0, min(100, volume))
         self.__send_to_audio_server(
             AudioServerCommand(
                 adjust_volume=BackendAdjustVolume(
-                    volume_delta=(volume - self.music_volume) / 100, is_microphone=False
+                    volume_delta=(volume - self.music_volume) / 100.0, is_microphone=False
                 )
             )
         )
+        self.music_volume = max(0, min(100, volume))
 
     def switch_recording(self):
         if self.recording:
