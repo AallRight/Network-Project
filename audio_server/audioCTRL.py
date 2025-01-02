@@ -174,9 +174,9 @@ class AudioController:
                         (mixed_audio * self.microphone_volume))
                     if len(indices) > 0 and self.print_time:
                         print("consumer play", indices, time.time())
-                    await asyncio.sleep(self.process_interval)
+                    await asyncio.sleep(self.process_interval / 10)
                 else:
-                    await asyncio.sleep(self.process_interval)
+                    await asyncio.sleep(self.process_interval / 10)
         except Exception as e:
             traceback.print_exc()
 

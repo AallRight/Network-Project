@@ -27,7 +27,7 @@ pcs = {}  # {connection_id: RTCPeerConnection}
 
 
 # 创建音频控制器实例
-audio_ctrl = AudioController(buffer_capacity=10,
+audio_ctrl = AudioController(buffer_capacity=2,
                              sample_rate=48000,
                              process_interval=0.001,
                              chunk_size=1920)
