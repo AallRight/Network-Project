@@ -1,4 +1,4 @@
-# KSONG: Karaoke Software Optimized for Networking and Games
+# KSONG: Karaoke Software Optimized for Networking and Party Games
 
 ## Architecture
 

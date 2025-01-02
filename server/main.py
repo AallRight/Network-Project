@@ -20,7 +20,7 @@ from server.controller import Controller, UsersManager
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.config["SECRET_KEY"] = "secret!"
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_model='eventlet')
 users_manager = UsersManager()
 controller: Optional[Controller] = None
 
@@ -30,7 +30,7 @@ def handle_connect():
     user_id = users_manager.allocate(request.sid)
     socketio.emit("user_id", {"user_id": user_id}, to=request.sid)
     app.logger.info(f"Client connected. {request.sid} {user_id}")
-
+    
 
 @socketio.on("disconnect")
 def handle_disconnect():

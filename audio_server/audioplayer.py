@@ -8,7 +8,7 @@ class AudioPlayer:
     def __init__(self,
                  format=pyaudio.paInt16,
                  sample_rate=48000,
-                 frames_per_buffer=256,
+                 frames_per_buffer=1920,
                  channels=2):
         self.p = pyaudio.PyAudio()
 

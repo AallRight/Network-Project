@@ -4,6 +4,8 @@ import noisereduce as nr
 import logging
 import threading
 import librosa
+import time
+import traceback
 
 from audio_server.audiomixer import AudioMixer
 from audio_server.audioplayer import AudioPlayer
@@ -54,7 +56,7 @@ class LocalAudio:
 
 
 class AudioController:
-    def __init__(self, sample_rate=48000, channels=2, buffer_capacity=1, chunk_size=1920, process_interval=0.001):
+    def __init__(self, sample_rate=48000, channels=2, buffer_capacity=5, chunk_size=1920, process_interval=0.0001):
         """
         音频控制器模块
         """
@@ -97,7 +99,7 @@ class AudioController:
         self.is_loading_audio = False
         self.is_music_playing = False
         self.is_microphone_recording = False
-        self.if_denoise = True
+        self.if_denoise = False
         self.if_reverb = False
 
         # 初始化音频控制器相关线程
@@ -106,6 +108,8 @@ class AudioController:
 
         self.microphone_thread = None
         self.microphone_event_loop = None
+
+        self.print_time = True # 调试用
 
     async def execute(self, audio_server_command: AudioServerCommand):
         try:
@@ -136,40 +140,50 @@ class AudioController:
 
     # * 音频控制器相关方法
     async def _play_audio_stream(self):
-        while self.is_running:
-            mixed_chunks = []
+        try:
+            while self.is_running:
+                mixed_chunks = []
 
-            # human voice
-            if self.audio_buffers:
-                mixed_chunks = await asyncio.gather(
-                    *[self.audio_buffers[buffer_id].get() for buffer_id in self.audio_buffers if not self.audio_buffers[buffer_id].empty()]
-                )
-
-            # local music
-            if self.is_running and self.is_music_playing and self.is_loading_audio and self.current_chunk_index < self.total_chunks:
-                self.current_chunk_index += 1
-                mixed_chunks.append(
-                    self.local_audio.audio_data[self.current_chunk_index] *
-                    self.music_volume / self.microphone_volume
-                )
-            else:
-                mixed_chunks.append(
-                    np.zeros((1, self.chunk_size), dtype=np.float32))
+                # human voice
+                if self.audio_buffers:
+                    mixed_chunks = await asyncio.gather(
+                        *[self.audio_buffers[buffer_id].get() for buffer_id in self.audio_buffers if not self.audio_buffers[buffer_id].empty()]
+                    )
                 
-            # mix audio
-            mixed_audio = self.mixer.mix_frames(mixed_chunks,
-                                                if_reverb=self.if_reverb)
+                indices = [chunk[1] for chunk in mixed_chunks]
+                mixed_chunks = [chunk[0] for chunk in mixed_chunks]
+                
+                # local music
+                if self.is_running and self.is_music_playing and self.is_loading_audio and self.current_chunk_index < self.total_chunks:
+                    self.current_chunk_index += 1
+                    mixed_chunks.append(
+                        self.local_audio.audio_data[self.current_chunk_index] *
+                        self.music_volume / self.microphone_volume
+                    )
+                else:
+                    mixed_chunks.append(
+                        np.zeros((1, self.chunk_size), dtype=np.float32))
+                    
+                # mix audio
+                mixed_audio = self.mixer.mix_frames(mixed_chunks,
+                                                    if_reverb=self.if_reverb)
+            
 
-            if mixed_audio is not None:
-                self.player.play_frame(
-                    (mixed_audio * self.microphone_volume))
-            else:
-                await asyncio.sleep(self.process_interval / 10)
+                if mixed_audio is not None:
+                    self.player.play_frame(
+                        (mixed_audio * self.microphone_volume))
+                    if len(indices) > 0 and self.print_time:
+                        print("consumer play", indices, time.time())
+                    await asyncio.sleep(self.process_interval)
+                else:
+                    await asyncio.sleep(self.process_interval)
+        except Exception as e:
+            traceback.print_exc()
 
     async def start_audio_playback(self):
         self.is_running = True
-        asyncio.run_coroutine_threadsafe(
-            self._play_audio_stream(), self.play_event_loop)
+        asyncio.create_task(
+            self._play_audio_stream())
         logging.info("音频播放已启动")
 
     async def stop_audio_playback(self):
@@ -229,8 +243,8 @@ class AudioController:
             maxsize=self.buffer_capacity)
         logging.info("已创建麦克风音频缓冲区")
 
-        asyncio.run_coroutine_threadsafe(
-            self._process_microphone_audio(), self.microphone_event_loop)
+        asyncio.create_task(
+            self._process_microphone_audio())
         logging.info("麦克风录音已启动")
 
         self.is_microphone_recording = True
@@ -253,8 +267,11 @@ class AudioController:
                 audio_data = frame.to_ndarray()
                 if self.audio_buffers[connection_id].full():
                     await self.audio_buffers[connection_id].get()
-                await self.audio_buffers[connection_id].put(audio_data)
+                    print("producer drop", idx, time.time())
+                await self.audio_buffers[connection_id].put((audio_data, idx))
+                print("producer put", idx, time.time())
                 await asyncio.sleep(self.process_interval)
+                idx += 1
             except Exception as e:
                 self.audio_buffers.pop(connection_id, None)
                 logging.info(f"缓冲区 {connection_id} 已移除")
@@ -264,6 +281,7 @@ class AudioController:
 
     # * 麦克风音频处理相关方法
     async def _process_microphone_audio(self):
+        idx = 0
         while self.is_microphone_recording and self.is_running:
             try:
                 audio_frame = await self.recorder.record_frame()
@@ -276,8 +294,9 @@ class AudioController:
                 if self.audio_buffers[self.microphone_id].full():
                     await self.audio_buffers[self.microphone_id].get()
 
-                await self.audio_buffers[self.microphone_id].put(audio_frame)
+                await self.audio_buffers[self.microphone_id].put((audio_frame, idx))
                 await asyncio.sleep(self.process_interval)
+                idx += 1
             except Exception as e:
                 break
 

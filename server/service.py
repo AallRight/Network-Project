@@ -76,6 +76,10 @@ class CommandService:
         self.active_song.set_volume(volume)
         return make_downlink_message_active_song(self.active_song),
 
+    def switch_recording(self):
+        self.audio_backend.switch_recording()
+        return make_downlink_message_active_song(self.active_song),
+
 
 class QueryService:
     def __init__(self, mlibrary: MLibrary, waitlist: Waitlist, active_song: ActiveSong):
