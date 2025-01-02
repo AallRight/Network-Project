@@ -1,5 +1,4 @@
 import eventlet
-
 eventlet.monkey_patch()
 
 from flask import Flask, render_template, request
@@ -20,7 +19,7 @@ from server.controller import Controller, UsersManager
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.config["SECRET_KEY"] = "secret!"
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_model='eventlet')
 users_manager = UsersManager()
 controller: Optional[Controller] = None
 
