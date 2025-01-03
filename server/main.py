@@ -12,6 +12,9 @@ import argparse
 import os
 import sys
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
@@ -68,11 +71,15 @@ if __name__ == "__main__":
         type=str,
         help="Audio Server URL (e.g. http://0.0.0.0:5000)",
     )
+    parser.add_argument("--keyfile", type=str, help="Path to the SSL key file")
+    parser.add_argument("--certfile", type=str, help="Path to the SSL certificate file")
     args = parser.parse_args()
 
     audio_server_url = args.audio_server_url
     controller = Controller(socketio, users_manager, args.db, args.music, urljoin(args.audio_server_url, "/audio_ctrl"))
     controller.start()
 
-
-    socketio.run(app, host="0.0.0.0", port=args.port)
+    if args.keyfile and args.certfile:
+        socketio.run(app, host="0.0.0.0", port=args.port, certfile=args.certfile, keyfile=args.keyfile)
+    else:
+        socketio.run(app, host="0.0.0.0", port=args.port)

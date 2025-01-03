@@ -114,7 +114,7 @@ class AudioBackend:
 
     def __send_to_audio_server(self, command: AudioServerCommand):
         try:
-            response = requests.post(self.audio_server_url, data=command.SerializeToString())
+            response = requests.post(self.audio_server_url, data=command.SerializeToString(), verify=False)
             response.raise_for_status()
         except requests.exceptions.HTTPError as http_err:
             raise Exception(f"Audio server HTTP error: {http_err}") from http_err
